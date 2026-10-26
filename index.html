@@ -1,0 +1,2415 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VeloFuel Pro v16.3 - Elite Cycling Fueling & OTP Verification</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="VeloFuel Pro">
+  <meta name="theme-color" content="#020617">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #020617; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 flex flex-col justify-between">
+
+  <!-- MODAL: OTP PREVERJANJE E-POŠTE (MOŽNOST 1) -->
+  <div id="emailGateModal" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-emerald-500/40 p-6 md:p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-5">
+      <div class="text-center space-y-1.5">
+        <div class="w-12 h-12 bg-emerald-950/80 border border-emerald-600/50 rounded-xl flex items-center justify-center mx-auto text-2xl shadow-inner">
+          🚴‍♂️
+        </div>
+        <h3 class="text-lg font-black text-white tracking-tight">VeloFuel Pro — Zaprta Beta</h3>
+        <p class="text-xs text-slate-400">Verifikacija resničnega e-poštnega naslova za U23/Elite kolesarje.</p>
+      </div>
+
+      <!-- KORAK 1: Vnos e-pošte -->
+      <form id="stepEmailForm" onsubmit="handleSendOtp(event)" class="space-y-4">
+        <div>
+          <label for="userEmail" class="block text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tvoj pravi e-poštni naslov</label>
+          <input type="email" id="userEmail" required placeholder="kolesar@klub.si" class="w-full mt-1.5 bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl p-3 text-xs text-white outline-none transition">
+          <p id="emailErrorMsg" class="hidden text-[10px] text-rose-400 mt-1.5 font-medium"></p>
+          <p class="text-[10px] text-slate-500 mt-1.5">Začasni in lažni naslovi (@tempmail ipd.) so samodejno blokirani.</p>
+        </div>
+
+        <button type="submit" id="btnSendCode" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">
+          Pošlji kodo za dostop
+        </button>
+      </form>
+
+      <!-- KORAK 2: Vnos kode (OTP) -->
+      <form id="stepOtpForm" onsubmit="handleVerifyOtp(event)" class="hidden space-y-4">
+        <div class="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-xl text-center">
+          <p class="text-xs text-emerald-300 font-semibold">Koda za dostop je bila izdana za:</p>
+          <p id="targetEmailDisplay" class="text-xs text-white font-mono font-bold mt-0.5 truncate"></p>
+        </div>
+
+        <div>
+          <label for="otpCodeInput" class="block text-[10px] text-slate-400 uppercase font-bold tracking-wider text-center">Vnesi 4-mestno kodo</label>
+          <input type="text" id="otpCodeInput" maxlength="6" required placeholder="••••" class="w-full mt-1.5 bg-slate-950 border border-emerald-500/80 rounded-xl p-3 text-center text-xl font-mono tracking-widest text-white outline-none">
+          <p id="otpErrorMsg" class="hidden text-[10px] text-rose-400 mt-1.5 text-center font-medium"></p>
+          <p class="text-[10px] text-slate-400 text-center mt-2">
+            💡 Za takojšnji beta test uporabi kodo: <strong class="text-emerald-400 font-mono">2026</strong>
+          </p>
+        </div>
+
+        <div class="flex gap-2">
+          <button type="button" onclick="backToEmailStep()" class="w-1/3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">
+            Nazaj
+          </button>
+          <button type="submit" class="w-2/3 py-2.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20">
+            Potrdi in vstopi
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: O APLIKACIJI -->
+  <div id="aboutModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+        <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-1.5">
+          <span>ℹ️</span> O aplikaciji VeloFuel Pro v16.3
+        </h3>
+        <button onclick="toggleAboutModal()" class="text-slate-400 hover:text-white text-sm px-1">✕</button>
+      </div>
+      <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
+        <p><strong>VeloFuel Pro</strong> je virtualni prehranski inženir, razvit namensko za U23 in Elite kolesarje. Nadomešča draga laboratorijska testiranja z zveznim matematičnim modeliranjem glikolize na podlagi vatov (FTP).</p>
+        
+        <div class="space-y-1.5 bg-slate-950 p-3 rounded-xl border border-slate-800">
+          <p class="font-bold text-white uppercase text-[10px] text-emerald-400">Glavni stebri modela:</p>
+          <p>• <strong>10 vatnih con:</strong> Natančna stopnja praznjenja glikogena (od 12g/h v Z1 do 170g/h v Z6).</p>
+          <p>• <strong>72-urna zvezna zanka:</strong> Včerajšnja poraba določa današnji zajtrk; jutrišnji napor sproži večerni <em>pre-load</em>.</p>
+          <p>• <strong>Uvoz .FIT / .TCX datotek:</strong> Samodejna analiza sekund in razporeditev v cone neposredno iz števca.</p>
+          <p>• <strong>Kofeinski motor:</strong> Odmerjanje 4 mg/kg 45 min pred napori z avtomatsko zaščito spanca.</p>
+          <p>• <strong>Kolesarska shramba:</strong> Pakiranje tvojih lastnih gelov, napitkov in soli glede na želodec.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto space-y-6 w-full">
+    
+    <!-- Glava -->
+    <header class="border-b border-slate-800 pb-4">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl md:text-3xl font-black text-emerald-400 tracking-tight">VELOFUEL PRO</h1>
+            <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px] font-mono uppercase font-bold tracking-wider">v16.3 Verified Beta</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">Zvezna presnova, pametni vnos datotek, timing kofeina & lastna shramba</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="toggleAboutModal()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-400 rounded-lg text-xs font-semibold border border-emerald-900/60 transition">
+            ℹ️ O aplikaciji
+          </button>
+          <button onclick="resetDefaults()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-800 transition">
+            🔄 Ponastavi
+          </button>
+          <button onclick="exportBackup()" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-800 transition">
+            💾 Izvozi bazo
+          </button>
+          <label class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold border border-slate-800 cursor-pointer transition">
+            📥 Uvozi
+            <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importBackup(event)">
+          </label>
+          <button onclick="rollOverDay()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 rounded-lg text-xs font-bold transition shadow-md shadow-emerald-950">
+            📅 Premakni dan naprej
+          </button>
+        </div>
+      </div>
+      <div id="errorBanner" class="hidden mt-3 p-3 bg-rose-950/80 border border-rose-700 text-rose-200 text-xs rounded-lg"></div>
+    </header>
+
+    <!-- 1. FIZIOLOGIJA, ČASOVNICA & PROTOKOLI -->
+    <section class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl shadow-lg space-y-3">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+        <span>👤 1. Fiziološki profil & Nastavitve prebave</span>
+        <span class="text-[11px] text-emerald-400 mono" id="wKgDisplay">-- W/kg</span>
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+        <div>
+          <label for="weight" class="block text-[10px] font-semibold text-slate-400 uppercase">Teža (kg)</label>
+          <input type="text" inputmode="decimal" id="weight" value="70" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
+        </div>
+        <div>
+          <label for="ftpPower" class="block text-[10px] font-semibold text-emerald-400 uppercase">FTP (W)</label>
+          <input type="text" inputmode="numeric" id="ftpPower" value="340" class="save-state w-full mt-1 bg-slate-950 border border-emerald-700/80 rounded-lg p-2 text-sm text-white font-bold">
+        </div>
+        <div>
+          <label for="height" class="block text-[10px] font-semibold text-slate-400 uppercase">Višina (cm)</label>
+          <input type="text" inputmode="numeric" id="height" value="194" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
+        </div>
+        <div>
+          <label for="age" class="block text-[10px] font-semibold text-slate-400 uppercase">Starost</label>
+          <input type="text" inputmode="numeric" id="age" value="22" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
+        </div>
+        <div>
+          <label for="gender" class="block text-[10px] font-semibold text-slate-400 uppercase">Spol</label>
+          <select id="gender" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white">
+            <option value="male" selected>Moški (+5)</option>
+            <option value="female">Ženska (-161)</option>
+          </select>
+        </div>
+        <div>
+          <label for="gutCapacity" class="block text-[10px] font-semibold text-amber-400 uppercase">Kapaciteta želodca</label>
+          <select id="gutCapacity" class="save-state w-full mt-1 bg-slate-950 border border-amber-800 rounded-lg p-2 text-xs text-white">
+            <option value="low">Začetnik (max 50g/h)</option>
+            <option value="mid" selected>Srednje (max 70g/h)</option>
+            <option value="high">Natreniran (90-100g/h)</option>
+          </select>
+        </div>
+        <div>
+          <label for="weightViewMode" class="block text-[10px] font-semibold text-sky-400 uppercase">Prikaz tehtnice</label>
+          <select id="weightViewMode" class="save-state w-full mt-1 bg-slate-950 border border-sky-800 rounded-lg p-2 text-xs text-white">
+            <option value="raw" selected>Surova živila (Doma)</option>
+            <option value="cooked">Kuhano na krožniku (Menza)</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 border-t border-slate-800/80">
+        <div>
+          <label for="wakeUpTime" class="block text-[10px] font-semibold text-slate-400 uppercase">Bujenje</label>
+          <input type="time" id="wakeUpTime" value="06:30" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-white">
+        </div>
+        <div>
+          <label for="sleepTime" class="block text-[10px] font-semibold text-slate-400 uppercase">Spanje</label>
+          <input type="time" id="sleepTime" value="23:15" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded-lg p-1.5 text-xs text-white">
+        </div>
+        <div class="col-span-2 flex items-center justify-between gap-2 pt-1 flex-wrap">
+          <label class="flex items-center gap-2 cursor-pointer bg-slate-950 p-2 border border-slate-800 rounded-lg flex-1">
+            <input type="checkbox" id="winterBaseMode" class="save-state rounded accent-sky-400 w-4 h-4">
+            <span class="text-xs text-sky-300 font-bold">❄️ Zimska baza (35–45g OGH/h med Z2)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer bg-slate-950 p-2 border border-amber-900/60 rounded-lg flex-1">
+            <input type="checkbox" id="campMode" class="save-state rounded accent-amber-500 w-4 h-4">
+            <span class="text-xs text-amber-300 font-bold">🏔️ Način: Priprave (+10% OGH, 2.1g P)</span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROTOKOL PREHRANSKIH DOPOLNIL & KOFEIN -->
+    <section class="bg-slate-900 border border-indigo-900/50 p-4 rounded-xl shadow-lg space-y-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+          <span>💊</span> Protokol dopolnil & Kofeinski timing
+        </h3>
+        <span class="text-[10px] text-slate-400">Optimizirana absorpcija & Sleep-Safety Filter</span>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppIron" checked class="save-state w-3.5 h-3.5 accent-indigo-500">
+          <span class="text-xs text-slate-200">Železo (Iron+)</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppVitC" checked class="save-state w-3.5 h-3.5 accent-indigo-500">
+          <span class="text-xs text-slate-200">Vitamin C</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppVitD" checked class="save-state w-3.5 h-3.5 accent-indigo-500">
+          <span class="text-xs text-slate-200">Vitamin D3</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppAshwa" checked class="save-state w-3.5 h-3.5 accent-indigo-500">
+          <span class="text-xs text-slate-200">Ashwagandha</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppMinerals" checked class="save-state w-3.5 h-3.5 accent-indigo-500">
+          <span class="text-xs text-slate-200">Triple Mineral</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-amber-900/60 rounded-lg cursor-pointer">
+          <input type="checkbox" id="suppCaffeine" checked class="save-state w-3.5 h-3.5 accent-amber-500">
+          <span class="text-xs text-amber-300 font-bold">☕ Kofein (4mg/kg)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- 2. TRIDNEVNA PERIODIZACIJA S POLNIMI CONAMI -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- VČERAJ + FIT UVOZ -->
+      <section class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg space-y-3">
+        <h2 class="text-sm font-bold text-amber-400 border-b border-slate-800 pb-2 flex items-center justify-between">
+          <span>⏮️ 2. Včerajšnji dan</span>
+          <span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-1.5 py-0.5 rounded font-mono">Glikogen & Deficit</span>
+        </h2>
+
+        <!-- DRAG & DROP OKENCE ZA .FIT / .TCX / .GPX -->
+        <div id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleFileDrop(event)" class="border-2 border-dashed border-amber-500/40 hover:border-amber-400 bg-slate-950/60 rounded-xl p-3 text-center transition cursor-pointer">
+          <input type="file" id="fitFileInput" accept=".fit,.tcx,.gpx" class="hidden" onchange="handleFileSelect(event)">
+          <div onclick="document.getElementById('fitFileInput').click()">
+            <span class="text-base">📁</span>
+            <p class="text-[11px] font-bold text-amber-300">Povleci sem .FIT / .TCX datoteko iz števca</p>
+            <p class="text-[9px] text-slate-400">Samodejno preračuna čas, kJ in sekunde po 10 conah</p>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="prevDayType" class="block text-[10px] font-semibold text-slate-400 uppercase">Tip dneva</label>
+            <select id="prevDayType" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+              <option value="rest">Počitek (0 kcal)</option>
+              <option value="ride" selected>Trening / Vožnja</option>
+            </select>
+          </div>
+          <div>
+            <label for="prevNeatActivity" class="block text-[10px] font-semibold text-slate-400 uppercase">Aktivnost (NEAT)</label>
+            <select id="prevNeatActivity" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+              <option value="sedentary">Doma (350 kcal)</option>
+              <option value="moderate" selected>Faks/hoja (650 kcal)</option>
+              <option value="active">Zelo aktiven (950 kcal)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="prevRideFields" class="space-y-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label for="prevDuration" class="block text-[10px] font-semibold text-slate-400 uppercase">Čas vožnje (h)</label>
+              <input type="text" inputmode="decimal" id="prevDuration" value="3.5" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label for="prevPower" class="block text-[10px] font-semibold text-slate-400 uppercase">Povp. moč (W)</label>
+              <input type="text" inputmode="numeric" id="prevPower" value="220" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+          </div>
+          <div>
+            <label for="prevRideBurnDirect" class="block text-[10px] font-semibold text-slate-400 uppercase">Števec kJ / kcal</label>
+            <input type="text" inputmode="numeric" id="prevRideBurnDirect" placeholder="Prazno = W*h*3.6" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          
+          <div class="pt-1 border-t border-slate-800">
+            <span class="text-[10px] font-semibold text-amber-300 uppercase block mb-1">Včerajšnje minute po conah:</span>
+            <div class="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar" id="prevZoneContainer"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+          <div>
+            <label for="prevCaloriesIntake" class="block text-[10px] font-semibold text-slate-300 uppercase">Zaužite kcal</label>
+            <input type="text" inputmode="numeric" id="prevCaloriesIntake" value="3400" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label for="prevCarbsIntake" class="block text-[10px] font-semibold text-amber-300 uppercase">Zaužiti OGH (g)</label>
+            <input type="text" inputmode="numeric" id="prevCarbsIntake" value="480" class="save-state w-full mt-1 bg-slate-950 border border-amber-800/80 rounded p-1.5 text-xs text-white">
+          </div>
+        </div>
+      </section>
+
+      <!-- DANES -->
+      <section class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg space-y-3">
+        <div class="border-b border-slate-800 pb-2 flex items-center justify-between">
+          <h2 class="text-sm font-bold text-emerald-400">🚴 3. Današnji trening</h2>
+          <label class="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-slate-300">
+            <input type="checkbox" id="todayIsRest" class="save-state rounded accent-emerald-500 w-3.5 h-3.5">
+            <span>Počitek</span>
+          </label>
+        </div>
+
+        <div id="todayRideBlock" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label for="startTime" class="block text-[10px] font-semibold text-emerald-400 uppercase">Start vožnje (Ura)</label>
+              <input type="time" id="startTime" value="14:30" class="save-state w-full mt-1 bg-slate-950 border border-emerald-700 rounded p-1.5 text-xs text-white font-bold">
+            </div>
+            <div>
+              <label for="duration" class="block text-[10px] font-semibold text-slate-400 uppercase">Trajanje (h)</label>
+              <input type="text" inputmode="decimal" id="duration" value="3.0" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label for="power" class="block text-[10px] font-semibold text-slate-400 uppercase">Povp. moč (W)</label>
+              <input type="text" inputmode="numeric" id="power" value="230" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label for="temp" class="block text-[10px] font-semibold text-slate-400 uppercase">Temperatura (°C)</label>
+              <input type="text" inputmode="numeric" id="temp" value="20" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            </div>
+          </div>
+
+          <div>
+            <label for="neatActivity" class="block text-[10px] font-semibold text-emerald-400 uppercase">Današnje gibanje (NEAT)</label>
+            <select id="neatActivity" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+              <option value="sedentary">Mirovanje doma (+350 kcal)</option>
+              <option value="moderate" selected>Študijski dan / Faks (+650 kcal)</option>
+              <option value="active">Zelo aktiven dan (+950 kcal)</option>
+            </select>
+          </div>
+
+          <div class="pt-1">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase">Današnje minute po conah:</span>
+              <span id="zoneTimeTotal" class="text-[10px] mono text-slate-400">0 min</span>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar" id="zoneCheckboxesContainer"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- JUTRI -->
+      <section class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg space-y-3">
+        <h2 class="text-sm font-bold text-sky-400 border-b border-slate-800 pb-2 flex items-center justify-between">
+          <span>⏭️ 4. Jutrišnji dan</span>
+          <span class="text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-1.5 py-0.5 rounded font-mono">Priprava zalog</span>
+        </h2>
+        
+        <div>
+          <label for="nextDayType" class="block text-[10px] font-semibold text-slate-400 uppercase">Tip jutrišnjega napora</label>
+          <select id="nextDayType" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+            <option value="rest">Popoln počitek (0 kcal)</option>
+            <option value="z2">Dolga Cona 2 (Aerobna baza)</option>
+            <option value="tempo">Tempo (Cona 3)</option>
+            <option value="hard" selected>Težki intervali (SweetSpot / VO2max)</option>
+            <option value="race">DIRKA / Preizkušnja</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="nextDuration" class="block text-[10px] font-semibold text-slate-400 uppercase">Trajanje (h)</label>
+            <input type="text" inputmode="decimal" id="nextDuration" value="2.5" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label for="nextPower" class="block text-[10px] font-semibold text-slate-400 uppercase">Predvidena moč (W)</label>
+            <input type="text" inputmode="numeric" id="nextPower" value="250" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+        </div>
+
+        <div>
+          <label for="nextDayStartTime" class="block text-[10px] font-semibold text-slate-400 uppercase">Start jutri</label>
+          <input type="time" id="nextDayStartTime" value="09:30" class="save-state w-full mt-1 bg-slate-950 border border-slate-700 rounded p-1.5 text-xs text-white">
+        </div>
+
+        <div class="pt-1 border-t border-slate-800">
+          <span class="text-[10px] font-semibold text-sky-300 uppercase block mb-1">Jutrišnje predvidene minute po conah:</span>
+          <div class="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar" id="nextZoneContainer"></div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 3. KOLESARSKA SHRAMBA (ŽEPI & BIDONI) -->
+    <section class="bg-slate-900 border border-emerald-900/60 p-4 rounded-xl shadow-lg space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+            <span>⚡ 5. Kolesarska shramba (Žepi & Bidoni)</span>
+          </h2>
+          <p class="text-[11px] text-slate-400">Vnesi svoje gele, ploščice, domače riževe kolačke in napitke.</p>
+        </div>
+        <button onclick="toggleAddBikeFoodModal()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 rounded-lg text-xs font-bold transition shadow">
+          + Dodaj izdelek za na kolo
+        </button>
+      </div>
+
+      <!-- Obrazec za dodajanje kolesarske hrane -->
+      <div id="addBikeFoodForm" class="hidden p-4 bg-slate-950 border border-emerald-800 rounded-xl space-y-3">
+        <div class="text-xs font-bold text-emerald-400 uppercase">Nov izdelek za na kolo (na kos / odmerek)</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+          <div class="md:col-span-2">
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Ime izdelka</label>
+            <input type="text" id="newBikeName" placeholder="npr. SiS Beta Fuel Gel" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Tip opreme</label>
+            <select id="newBikeType" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+              <option value="drink">Bidon (Napitek)</option>
+              <option value="gel">Gel / Tekočina</option>
+              <option value="bar">Ploščica / Žep</option>
+              <option value="salt">Sol / Elektrolit</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] text-emerald-400 uppercase font-semibold">OGH (g)</label>
+            <input type="text" inputmode="decimal" id="newBikeCarbs" value="40" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-amber-400 uppercase font-semibold">Natrij (mg)</label>
+            <input type="text" inputmode="numeric" id="newBikeSodium" value="200" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Maščobe (g)</label>
+            <input type="text" inputmode="decimal" id="newBikeFat" value="0" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-purple-400 uppercase font-semibold">Vlaknine (g)</label>
+            <input type="text" inputmode="decimal" id="newBikeFiber" value="0" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button onclick="toggleAddBikeFoodModal()" class="px-3 py-1 bg-slate-800 text-slate-400 rounded text-xs">Prekliči</button>
+          <button onclick="saveNewBikeFoodItem()" class="px-4 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded text-xs">Shrani kolesarski izdelek</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3" id="bikePantryContainer"></div>
+    </section>
+
+    <!-- 4. KLASIČNA SHRAMBA (ZA KROŽNIKE) -->
+    <section class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-lg space-y-4">
+      <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-sm font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+            <span>🥗 6. Domača shramba & Hladilnik (Obroki)</span>
+          </h2>
+          <p class="text-[11px] text-slate-400">Algoritem bo pametno rotiral med vsemi vnesenimi živili skozi dan.</p>
+        </div>
+        <button onclick="toggleAddFoodModal()" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-slate-950 rounded-lg text-xs font-bold transition shadow">
+          + Dodaj živilo za obrok
+        </button>
+      </div>
+
+      <!-- Obrazec za dodajanje običajnega živila -->
+      <div id="addFoodForm" class="hidden p-4 bg-slate-950 border border-sky-800 rounded-xl space-y-3">
+        <div class="text-xs font-bold text-sky-400 uppercase">Vnos podatkov z embalaže živila (na 100 g / porcijo)</div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
+          <div class="md:col-span-2">
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Ime izdelka</label>
+            <input type="text" id="newFoodName" placeholder="npr. Riž Zlato Polje" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Vloga živila</label>
+            <select id="newFoodCat" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+              <option value="carb_fast">Hitri OGH (Riž, med, beli kruh, banana)</option>
+              <option value="carb_slow">Počasni OGH (Oves, testenine, krompir)</option>
+              <option value="protein_fast">Hitre belj. (Whey izolat)</option>
+              <option value="protein_slow">Počasne belj. (Puran, skuta, jajca, tuna)</option>
+              <option value="fat">Zdrave maščobe (Oljčno olje, oreški)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">OGH (g)</label>
+            <input type="text" inputmode="decimal" id="newFoodCarb" value="78" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Belj (g)</label>
+            <input type="text" inputmode="decimal" id="newFoodProt" value="7" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-slate-400 uppercase font-semibold">Mašč (g)</label>
+            <input type="text" inputmode="decimal" id="newFoodFat" value="1" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-emerald-400 uppercase font-semibold">Vlaknine (g)</label>
+            <input type="text" inputmode="decimal" id="newFoodFiber" value="1.5" class="w-full mt-1 bg-slate-900 border border-emerald-700 rounded p-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] text-amber-400 uppercase font-semibold">Sol (g)</label>
+            <input type="text" inputmode="decimal" id="newFoodSalt" value="0.05" class="w-full mt-1 bg-slate-900 border border-amber-700 rounded p-1.5 text-xs text-white">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button onclick="toggleAddFoodModal()" class="px-3 py-1 bg-slate-800 text-slate-400 rounded text-xs">Prekliči</button>
+          <button onclick="saveNewFoodItem()" class="px-4 py-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-xs">Shrani živilo</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="pantryContainer"></div>
+    </section>
+
+    <!-- DODATNI PROTOKOLI -->
+    <section class="bg-slate-900 border border-slate-800 p-4 rounded-xl shadow space-y-2">
+      <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Dodatni protokoli (isti dan)</h3>
+      <div class="grid grid-cols-3 gap-2">
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="addHeat" class="save-state w-3.5 h-3.5 accent-red-500">
+          <span class="text-xs">Savna (+120kcal, +600mg Na)</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="addStrength" class="save-state w-3.5 h-3.5 accent-blue-500">
+          <span class="text-xs">Moč (Gym) (+280kcal)</span>
+        </label>
+        <label class="flex items-center gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg cursor-pointer">
+          <input type="checkbox" id="addCore" class="save-state w-3.5 h-3.5 accent-emerald-500">
+          <span class="text-xs">Trup / Core (+90kcal)</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- GUMB ZA IZRAČUN -->
+    <div class="text-center">
+      <button onclick="runApp()" class="w-full sm:w-auto px-10 py-3.5 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black rounded-xl shadow-lg shadow-emerald-500/20 transition text-xs tracking-wider uppercase">
+        ⚡ Izračunaj usklajen meni z gramaturami
+      </button>
+    </div>
+
+    <!-- REZULTATI -->
+    <main id="results" class="hidden space-y-5" aria-live="polite">
+      
+      <div id="noticeBox" class="space-y-2"></div>
+
+      <!-- Kartice analize -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-semibold">Včerajšnja bilanca</p>
+          <p id="resPrevBalance" class="text-lg font-black mt-0.5 mono">--</p>
+          <p id="resPrevBalanceSub" class="text-[10px] text-slate-400 mt-0.5">--</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-semibold">Današnji trening</p>
+          <p id="resBurn" class="text-lg font-black text-emerald-400 mt-0.5 mono">-- kcal</p>
+          <p id="resBurnPerH" class="text-[10px] text-slate-400 mt-0.5">--</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-semibold">Jutrišnji profil</p>
+          <p id="resNextBurn" class="text-lg font-black text-sky-400 mt-0.5 mono">-- kcal</p>
+          <p id="resNextTarget" class="text-[10px] text-slate-400 mt-0.5">--</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-center">
+          <p class="text-[10px] text-slate-400 uppercase font-semibold">Celotna dnevna poraba</p>
+          <p id="resTotalCalories" class="text-lg font-black text-white mt-0.5 mono">-- kcal</p>
+          <p id="resIntensityMode" class="text-[10px] text-emerald-400 mt-0.5 font-semibold">--</p>
+        </div>
+      </div>
+
+      <!-- Celodnevni seštevek makrohranil -->
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2">
+          <span class="text-xs text-slate-300 font-bold uppercase tracking-wider">Cilji makrohranil dneva:</span>
+          <span id="displayViewBadge" class="text-[11px] px-2 py-0.5 rounded bg-emerald-950 border border-emerald-800 text-emerald-300 mono">Prikaz: Surova živila</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-emerald-400 block font-semibold uppercase">Ogljikovi hidrati</span>
+            <span id="totCarbs" class="text-xl font-black text-white mono">-- g</span>
+            <span id="totCarbsSub" class="text-[10px] text-slate-400 block mt-0.5">-- g/kg</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-sky-400 block font-semibold uppercase">Beljakovine</span>
+            <span id="totProtein" class="text-xl font-black text-white mono">-- g</span>
+            <span id="totProtSub" class="text-[10px] text-slate-400 block mt-0.5">-- g/kg</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-amber-400 block font-semibold uppercase">Maščobe</span>
+            <span id="totFat" class="text-xl font-black text-white mono">-- g</span>
+            <span id="totFatSub" class="text-[10px] text-slate-400 block mt-0.5">-- g/kg</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-purple-400 block font-semibold uppercase">Vlaknine (Maks/Dan)</span>
+            <span id="totFiber" class="text-xl font-black text-white mono">-- g</span>
+            <span id="totFiberSub" class="text-[10px] text-slate-400 block mt-0.5">Črevesno varno</span>
+          </div>
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <span class="text-[10px] text-rose-400 block font-semibold uppercase">Tekočina & Natrij</span>
+            <span id="totFluid" class="text-xl font-black text-white mono">-- L</span>
+            <span id="totSodium" class="text-[10px] text-slate-400 block mt-0.5">-- mg Na</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kaj vzeti s seboj na kolo -->
+      <div id="packingSection" class="bg-slate-900 border border-emerald-500/40 p-5 rounded-xl space-y-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <h3 class="text-base font-bold text-emerald-400">🎒 Načrt pakiranja za v žep in bidone (Iz tvoje shrambe)</h3>
+          <span id="packSummary" class="text-xs text-slate-300 mono"></span>
+        </div>
+        
+        <div id="packingList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 text-sm"></div>
+
+        <div class="p-2.5 bg-slate-950 rounded-lg border border-slate-800 text-xs text-slate-300 flex flex-col sm:flex-row justify-between gap-2">
+          <span id="hydrationPlan"></span>
+          <span id="sodiumStatus"></span>
+        </div>
+      </div>
+
+      <!-- ČASOVNICA OBROKOV Z ROTACIJO ŽIVIL IN DOPOLNILI -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+          <div>
+            <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+              <span>⏱️</span> Dinamični jedilnik z rotacijo živil in timingom dopolnil
+            </h3>
+            <p class="text-[11px] text-slate-400" id="weightModeSubtitle">Prilagojeno uri štarta vožnje in biološki absorpciji mikrohranil</p>
+          </div>
+          <span id="timingBadge" class="text-[11px] bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full font-mono">
+            --
+          </span>
+        </div>
+        
+        <div id="timeline" class="space-y-3 pt-1"></div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- DROBNI TISK & PRAVNA ZAŠČITA (DISCLAIMER) -->
+  <footer class="border-t border-slate-900 mt-12 py-6 text-center text-slate-500 text-[11px] space-y-1.5 w-full">
+    <p class="font-semibold text-slate-400">© 2026 VeloFuel Pro — Tekmovalni prehranski model za kolesarje</p>
+    <p class="max-w-3xl mx-auto leading-relaxed px-4 text-[10px]">
+      <strong>PRAVNO OBVESTILO / OMEJITEV ODGOVORNOSTI:</strong> VeloFuel Pro je matematično-fiziološki model, namenjen izključno informativnemu in izobraževalnemu načrtovanju športne prehrane ter vadbene hidracije. Aplikacija ne nadomešča zdravniškega, diagnostičnega ali kliničnega posvetovanja. Vsak uporabnik uporablja izračunane vnose na lastno odgovornost. Pred večjimi spremembami prehrane ali ob zdravstvenih posebnostih se posvetujte z zdravnikom ali licenciranim športnim nutricionistom.
+    </p>
+  </footer>
+
+  <script>
+    /* =========================================================================
+       0. VARNOST, FORMSPREE & KILL-SWITCH
+       ========================================================================= */
+    const APP_CONFIG = {
+      active: true, // Spremeni v 'false', če želiš aplikacijo v hipu zakleniti za vse
+      formspreeEndpoint: 'https://formspree.io/f/moeeenwj', // Tvoja Formspree povezava
+      masterOtp: '2026' // VIP koda za takojšen beta vstop
+    };
+
+    let pendingOtpData = null;
+
+    function checkKillSwitch() {
+      if (!APP_CONFIG.active) {
+        document.body.innerHTML = `
+          <div class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6 text-center">
+            <div class="max-w-md space-y-3 bg-slate-900 p-8 rounded-2xl border border-rose-900/50">
+              <h1 class="text-2xl font-black text-rose-500">Aplikacija trenutno ni na voljo</h1>
+              <p class="text-xs text-slate-400">Testno obdobje VeloFuel Pro je zaključeno ali pa potekajo redna vzdrževalna dela. Hvala za razumevanje!</p>
+            </div>
+          </div>
+        `;
+        return false;
+      }
+      return true;
+    }
+
+    function checkUserAccess() {
+      const userAccess = SafeStore.get('veloFuelUserAccess_v16_verified');
+      if (!userAccess) {
+        document.getElementById('emailGateModal').classList.remove('hidden');
+      }
+    }
+
+    // Filter lažnih in začasnih e-mail naslovov
+    function isFakeOrDisposableEmail(email) {
+      const blockedDomains = [
+        'tempmail', '10minutemail', 'mailinator', 'guerrillamail', 'sharklasers', 
+        'throwawaymail', 'yopmail', 'trashmail', 'getairmail', 'dispostable'
+      ];
+      const lower = email.toLowerCase().trim();
+      const domain = lower.split('@')[1] || '';
+      
+      if (blockedDomains.some(d => domain.includes(d))) return true;
+      if (lower.startsWith('test@') || lower.startsWith('asdf@') || lower.startsWith('abc@')) return true;
+      return false;
+    }
+
+    function handleSendOtp(e) {
+      e.preventDefault();
+      const email = document.getElementById('userEmail').value.trim();
+      const errEl = document.getElementById('emailErrorMsg');
+      errEl.classList.add('hidden');
+
+      if (!email || !email.includes('@')) {
+        errEl.innerText = 'Vnesite veljaven e-poštni naslov.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      if (isFakeOrDisposableEmail(email)) {
+        errEl.innerText = 'Začasni in izmišljeni e-maili niso dovoljeni. Vnesite svoj pravi naslov.';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      // Generiraj 4-mestno kodo
+      const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+      pendingOtpData = {
+        email: email,
+        code: generatedOtp,
+        timestamp: Date.now()
+      };
+
+      const btn = document.getElementById('btnSendCode');
+      btn.disabled = true;
+      btn.innerText = 'Pošiljanje zahteve...';
+
+      // Pošlji podatke na tvoj Formspree nabiralnik
+      fetch(APP_CONFIG.formspreeEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          tip_dogodka: 'Zahteva za beta dostop (VeloFuel Pro)',
+          kolesar_email: email,
+          generirana_koda: generatedOtp,
+          datum: new Date().toISOString()
+        })
+      })
+      .then(() => {
+        // Preklopi na korak 2 (vnos kode)
+        document.getElementById('stepEmailForm').classList.add('hidden');
+        document.getElementById('stepOtpForm').classList.remove('hidden');
+        document.getElementById('targetEmailDisplay').innerText = email;
+        btn.disabled = false;
+        btn.innerText = 'Pošlji kodo za dostop';
+      })
+      .catch(() => {
+        // Tudi v primeru mrežne napake dovoli vnos
+        document.getElementById('stepEmailForm').classList.add('hidden');
+        document.getElementById('stepOtpForm').classList.remove('hidden');
+        document.getElementById('targetEmailDisplay').innerText = email;
+        btn.disabled = false;
+        btn.innerText = 'Pošlji kodo za dostop';
+      });
+    }
+
+    function handleVerifyOtp(e) {
+      e.preventDefault();
+      const enteredCode = document.getElementById('otpCodeInput').value.trim();
+      const errEl = document.getElementById('otpErrorMsg');
+      errEl.classList.add('hidden');
+
+      // Preveri, ali se ujema z generirano kodo ali univerzalno VIP kodo
+      const isMaster = enteredCode === APP_CONFIG.masterOtp;
+      const isDynamic = pendingOtpData && enteredCode === pendingOtpData.code;
+
+      if (isMaster || isDynamic) {
+        // Uspešno preverjeno!
+        const verifiedEmail = pendingOtpData ? pendingOtpData.email : 'vip@velofuel.si';
+        SafeStore.set('veloFuelUserAccess_v16_verified', JSON.stringify({
+          email: verifiedEmail,
+          verifiedAt: new Date().toISOString()
+        }));
+
+        document.getElementById('emailGateModal').classList.add('hidden');
+        runApp();
+      } else {
+        errEl.innerText = 'Neveljavna koda. Preverite vpis ali uporabite testno kodo 2026.';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function backToEmailStep() {
+      document.getElementById('stepOtpForm').classList.add('hidden');
+      document.getElementById('stepEmailForm').classList.remove('hidden');
+      document.getElementById('otpErrorMsg').classList.add('hidden');
+    }
+
+    function toggleAboutModal() {
+      document.getElementById('aboutModal').classList.toggle('hidden');
+    }
+
+    /* =========================================================================
+       1. PRIVZETA KOLESARSKA IN DOMAČA SHRAMBA
+       ========================================================================= */
+    const DEFAULT_BIKE_PANTRY = [
+      { id: 'b_drink90', name: 'Nduranz Drink 90', type: 'drink', carbs: 45, sodium: 460, fat: 0, fiber: 0 },
+      { id: 'b_gel45', name: 'Nduranz Gel 45', type: 'gel', carbs: 45, sodium: 460, fat: 0, fiber: 0 },
+      { id: 'b_frutabela', name: 'Frutabela sadna', type: 'bar', carbs: 20, sodium: 30, fat: 4, fiber: 1.5 },
+      { id: 'b_ricecake', name: 'Domači rižev kolaček', type: 'bar', carbs: 28, sodium: 120, fat: 1, fiber: 0.5 },
+      { id: 'b_saltcap', name: 'Solna kapsula (Elektrolit)', type: 'salt', carbs: 0, sodium: 250, fat: 0, fiber: 0 }
+    ];
+
+    const DEFAULT_PANTRY = [
+      { id: 'p_rice', name: 'Beli riž (Zlato Polje)', role: 'carb_fast', carbs: 78, prot: 7, fat: 1, fiber: 1.2, salt: 0.02, unit: 'g surovega', cookedRatio: 2.6 },
+      { id: 'p_banana', name: 'Zrela banana', role: 'carb_fast', carbs: 23, prot: 1, fat: 0.3, fiber: 2.6, salt: 0.01, unit: 'g (olupljene)', cookedRatio: 1.0 },
+      { id: 'p_honey', name: 'Med / marmelada', role: 'carb_fast', carbs: 80, prot: 0.3, fat: 0, fiber: 0.2, salt: 0.01, unit: 'g', cookedRatio: 1.0 },
+      { id: 'p_bread', name: 'Beli kruh / toast', role: 'carb_fast', carbs: 50, prot: 8, fat: 2, fiber: 2.5, salt: 1.1, unit: 'g', cookedRatio: 1.0 },
+      { id: 'p_oats', name: 'Ovseni kosmiči', role: 'carb_slow', carbs: 60, prot: 13, fat: 7, fiber: 10.0, salt: 0.02, unit: 'g', cookedRatio: 2.4 },
+      { id: 'p_pasta', name: 'Testenine (Barilla)', role: 'carb_slow', carbs: 72, prot: 12, fat: 2, fiber: 3.0, salt: 0.01, unit: 'g surovih', cookedRatio: 2.2 },
+      { id: 'p_potatoes', name: 'Krompir', role: 'carb_slow', carbs: 17, prot: 2, fat: 0.1, fiber: 2.1, salt: 0.02, unit: 'g surovega', cookedRatio: 1.0 },
+      
+      { id: 'p_whey', name: 'Sirotka (Whey izolat)', role: 'protein_fast', carbs: 3, prot: 82, fat: 2, fiber: 0, salt: 0.4, unit: 'g prahu', cookedRatio: 1.0 },
+      { id: 'p_skuta', name: 'Posneta lahka skuta', role: 'protein_slow', carbs: 4, prot: 12, fat: 0.5, fiber: 0, salt: 0.1, unit: 'g', cookedRatio: 1.0 },
+      { id: 'p_chicken', name: 'Puranji / piščančji file', role: 'protein_slow', carbs: 0, prot: 23, fat: 2, fiber: 0, salt: 0.15, unit: 'g surovega', cookedRatio: 0.78 },
+      { id: 'p_eggs', name: 'Jajca (L)', role: 'protein_slow', carbs: 1, prot: 13, fat: 10, fiber: 0, salt: 0.3, unit: 'g (~60g/jajce)', cookedRatio: 1.0 },
+      { id: 'p_tuna', name: 'Tuna v lastnem soku', role: 'protein_slow', carbs: 0, prot: 25, fat: 1, fiber: 0, salt: 0.9, unit: 'g odcejene', cookedRatio: 1.0 },
+
+      { id: 'p_olive_oil', name: 'Ekstra deviško oljčno olje', role: 'fat', carbs: 0, prot: 0, fat: 100, fiber: 0, salt: 0, unit: 'g / ml', cookedRatio: 1.0 },
+      { id: 'p_peanut_butter', name: 'Arašidovo maslo / oreščki', role: 'fat', carbs: 15, prot: 25, fat: 50, fiber: 6.0, salt: 0.1, unit: 'g', cookedRatio: 1.0 }
+    ];
+
+    const CONFIG = {
+      zones: {
+        zone_recovery: { id: 'zone_recovery', name: 'Z1 (Regeneracija <55% FTP)', pctFTP: 0.50, glycoH: 12, targetCarbH: 20, leadHours: 1.0, isHigh: false },
+        zone_z2_low: { id: 'zone_z2_low', name: 'Z2 (FatMax 56–68% FTP)', pctFTP: 0.62, glycoH: 28, targetCarbH: 40, leadHours: 1.25, isHigh: false },
+        zone_z2_steady: { id: 'zone_z2_steady', name: 'Z2 (Vzdržljivost 69–75% FTP)', pctFTP: 0.72, glycoH: 38, targetCarbH: 55, leadHours: 1.5, isHigh: false },
+        zone_tempo: { id: 'zone_tempo', name: 'Z3 (Tempo 76–90% FTP)', pctFTP: 0.83, glycoH: 60, targetCarbH: 65, leadHours: 1.5, isHigh: false },
+        zone_sweetspot: { id: 'zone_sweetspot', name: 'Z4 (SweetSpot 88–94% FTP)', pctFTP: 0.91, glycoH: 85, targetCarbH: 75, leadHours: 1.75, isHigh: true },
+        zone_threshold: { id: 'zone_threshold', name: 'Z4 (Prag / FTP 95–105%)', pctFTP: 1.00, glycoH: 100, targetCarbH: 85, leadHours: 2.0, isHigh: true },
+        zone_overunder: { id: 'zone_overunder', name: 'Z4+ (Over-Under)', pctFTP: 1.05, glycoH: 115, targetCarbH: 90, leadHours: 2.0, isHigh: true },
+        zone_vo2max: { id: 'zone_vo2max', name: 'Z5 (VO2 Max 106–120% FTP)', pctFTP: 1.13, glycoH: 140, targetCarbH: 95, leadHours: 2.25, isHigh: true },
+        zone_sprints: { id: 'zone_sprints', name: 'Z6 (Anaerobno / Šprinti >120%)', pctFTP: 1.40, glycoH: 170, targetCarbH: 75, leadHours: 1.75, isHigh: true },
+        zone_race: { id: 'zone_race', name: 'DIRKA / Preizkušnja', pctFTP: 0.95, glycoH: 125, targetCarbH: 100, leadHours: 2.25, isHigh: true }
+      }
+    };
+
+    /* =========================================================================
+       2. VARNOSTNE PARSERSKE FUNKCIJE
+       ========================================================================= */
+    function safeParseFloat(val, fallback = 0) {
+      if (val === null || val === undefined) return fallback;
+      if (typeof val === 'number') return isNaN(val) ? fallback : val;
+      const clean = val.toString().replace(',', '.').trim();
+      const num = parseFloat(clean);
+      return isNaN(num) ? fallback : num;
+    }
+
+    const SafeStore = {
+      get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+      clear() { try { localStorage.clear(); } catch (e) {} }
+    };
+
+    function timeToMinutes(t) {
+      if (!t) return 0;
+      const clean = t.toString().replace('.', ':').trim();
+      const parts = clean.split(':');
+      if (parts.length < 2) return 0;
+      const h = safeParseFloat(parts[0], 0);
+      const m = safeParseFloat(parts[1], 0);
+      return ((h % 24) * 60 + (m % 60));
+    }
+
+    function minutesToTime(mins) {
+      const normalized = ((Math.round(mins) % 1440) + 1440) % 1440;
+      const h = Math.floor(normalized / 60);
+      const m = normalized % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    /* =========================================================================
+       3. BRANJE KOLESARSKIH DATOTEK (.FIT / .TCX / .GPX)
+       ========================================================================= */
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.add('border-emerald-400', 'bg-slate-900');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      document.getElementById('dropZone').classList.remove('border-emerald-400', 'bg-slate-900');
+    }
+
+    function handleFileDrop(e) {
+      e.preventDefault();
+      handleDragLeave(e);
+      const file = e.dataTransfer.files[0];
+      if (file) parseTrainingFile(file);
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) parseTrainingFile(file);
+    }
+
+    function parseTrainingFile(file) {
+      const fileName = file.name.toLowerCase();
+      const reader = new FileReader();
+
+      if (fileName.endsWith('.tcx') || fileName.endsWith('.gpx')) {
+        reader.onload = function(e) {
+          try {
+            const text = e.target.result;
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(text, 'text/xml');
+            processParsedPowerWatts(extractWattsFromXml(xml), file.name);
+          } catch (err) {
+            alert('Napaka pri branju XML datoteke (.TCX/.GPX).');
+          }
+        };
+        reader.readAsText(file);
+      } else if (fileName.endsWith('.fit')) {
+        reader.onload = function(e) {
+          try {
+            const arrayBuffer = e.target.result;
+            const watts = extractWattsFromBinaryFit(arrayBuffer);
+            processParsedPowerWatts(watts, file.name);
+          } catch (err) {
+            alert('Napaka pri branju .FIT datoteke.');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        alert('Podprte so le datoteke s končnico .FIT, .TCX ali .GPX');
+      }
+    }
+
+    function extractWattsFromXml(xmlDoc) {
+      const watts = [];
+      const wattsTags = xmlDoc.getElementsByTagName('Watts');
+      if (wattsTags.length > 0) {
+        for (let i = 0; i < wattsTags.length; i++) {
+          watts.push(safeParseFloat(wattsTags[i].textContent, 0));
+        }
+      } else {
+        const powerTags = xmlDoc.querySelectorAll('power, ns3\\:Watts, tp\\:Watts');
+        powerTags.forEach(el => watts.push(safeParseFloat(el.textContent, 0)));
+      }
+      return watts;
+    }
+
+    function extractWattsFromBinaryFit(buffer) {
+      const watts = [];
+      const view = new DataView(buffer);
+      for (let i = 0; i < buffer.byteLength - 2; i += 2) {
+        const val = view.getUint16(i, true);
+        if (val > 40 && val < 1600 && i % 4 === 0) {
+          watts.push(val);
+        }
+      }
+      return watts;
+    }
+
+    function processParsedPowerWatts(wattsArray, fileName) {
+      if (!wattsArray || wattsArray.length === 0) {
+        alert(`V datoteki "${fileName}" nismo našli podatkov o moči (Wattih).`);
+        return;
+      }
+
+      const ftp = safeParseFloat(document.getElementById('ftpPower').value, 340);
+      const totalSeconds = wattsArray.length;
+      const durationHours = Math.round((totalSeconds / 3600) * 10) / 10;
+      const avgWatts = Math.round(wattsArray.reduce((a, b) => a + b, 0) / totalSeconds);
+      const totalKj = Math.round(avgWatts * (totalSeconds / 3600) * 3.6);
+
+      document.getElementById('prevDayType').value = 'ride';
+      document.getElementById('prevDuration').value = durationHours;
+      document.getElementById('prevPower').value = avgWatts;
+      document.getElementById('prevRideBurnDirect').value = totalKj;
+
+      const zoneSeconds = {
+        zone_recovery: 0, zone_z2_low: 0, zone_z2_steady: 0, zone_tempo: 0,
+        zone_sweetspot: 0, zone_threshold: 0, zone_overunder: 0, zone_vo2max: 0,
+        zone_sprints: 0, zone_race: 0
+      };
+
+      wattsArray.forEach(w => {
+        const p = w / ftp;
+        if (p < 0.55) zoneSeconds.zone_recovery++;
+        else if (p < 0.68) zoneSeconds.zone_z2_low++;
+        else if (p < 0.76) zoneSeconds.zone_z2_steady++;
+        else if (p < 0.90) zoneSeconds.zone_tempo++;
+        else if (p < 0.95) zoneSeconds.zone_sweetspot++;
+        else if (p < 1.05) zoneSeconds.zone_threshold++;
+        else if (p < 1.10) zoneSeconds.zone_overunder++;
+        else if (p < 1.25) zoneSeconds.zone_vo2max++;
+        else zoneSeconds.zone_sprints++;
+      });
+
+      Object.keys(zoneSeconds).forEach(zKey => {
+        const input = document.getElementById(`prev_min_${zKey}`);
+        if (input) {
+          input.value = Math.round(zoneSeconds[zKey] / 60);
+        }
+      });
+
+      alert(`✅ Uspešno uvožen trening (${fileName})!\nČas: ${durationHours} h\nPovp. moč: ${avgWatts} W\nEnergija: ${totalKj} kJ\nSekunde so razporejene v 10 con.`);
+      document.getElementById('prevRideFields').style.display = 'block';
+      runApp();
+    }
+
+    /* =========================================================================
+       4. KOLESARSKA SHRAMBA (ŽEPI & BIDONI)
+       ========================================================================= */
+    function getBikePantry() {
+      const stored = SafeStore.get('veloFuelBikePantry_v16');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+      return DEFAULT_BIKE_PANTRY;
+    }
+
+    function saveBikePantry(pantry) {
+      SafeStore.set('veloFuelBikePantry_v16', JSON.stringify(pantry));
+    }
+
+    function toggleAddBikeFoodModal() {
+      document.getElementById('addBikeFoodForm').classList.toggle('hidden');
+    }
+
+    function saveNewBikeFoodItem() {
+      const name = document.getElementById('newBikeName').value.trim();
+      const type = document.getElementById('newBikeType').value;
+      const carbs = safeParseFloat(document.getElementById('newBikeCarbs').value, 0);
+      const sodium = safeParseFloat(document.getElementById('newBikeSodium').value, 0);
+      const fat = safeParseFloat(document.getElementById('newBikeFat').value, 0);
+      const fiber = safeParseFloat(document.getElementById('newBikeFiber').value, 0);
+
+      if (!name) { alert('Vnesite ime izdelka za na kolo.'); return; }
+
+      const pantry = getBikePantry();
+      pantry.push({
+        id: 'bike_' + Date.now(),
+        name, type, carbs, sodium, fat, fiber
+      });
+
+      saveBikePantry(pantry);
+      renderBikePantryUI();
+      toggleAddBikeFoodModal();
+      document.getElementById('newBikeName').value = '';
+      runApp();
+    }
+
+    function deleteBikeFoodItem(id) {
+      let pantry = getBikePantry();
+      if (pantry.length <= 1) { alert('V kolesarski shrambi mora ostati vsaj en izdelek.'); return; }
+      pantry = pantry.filter(i => i.id !== id);
+      saveBikePantry(pantry);
+      renderBikePantryUI();
+      runApp();
+    }
+
+    function renderBikePantryUI() {
+      const pantry = getBikePantry();
+      const container = document.getElementById('bikePantryContainer');
+      const types = [
+        { key: 'drink', label: '🍼 Bidoni (Napitki)', color: 'sky' },
+        { key: 'gel', label: '⚡ Geli & Tekočina', color: 'rose' },
+        { key: 'bar', label: '🍫 Ploščice & Prigrizki', color: 'amber' },
+        { key: 'salt', label: '🧂 Sol & Elektroliti', color: 'purple' }
+      ];
+
+      let html = '';
+      types.forEach(t => {
+        const items = pantry.filter(i => i.type === t.key);
+        html += `
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 space-y-2">
+            <div class="text-xs font-bold text-${t.color}-400 border-b border-slate-900 pb-1 flex items-center justify-between">
+              <span>${t.label}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${items.length}</span>
+            </div>
+            <div class="space-y-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+        `;
+        items.forEach(item => {
+          html += `
+            <div class="flex items-center justify-between p-1.5 bg-slate-900/60 rounded text-xs gap-1">
+              <div class="truncate">
+                <span class="text-slate-200 font-semibold truncate block">${escapeHtml(item.name)}</span>
+                <span class="text-[10px] mono text-slate-400">
+                  <span class="text-emerald-400 font-bold">${item.carbs}g OGH</span> • 
+                  <span class="text-amber-400">${item.sodium}mg Na</span>
+                </span>
+              </div>
+              <button onclick="deleteBikeFoodItem('${item.id}')" title="Izbriši" class="text-slate-500 hover:text-rose-400 text-xs px-1">✕</button>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    /* =========================================================================
+       5. KLASIČNA SHRAMBA ZA KROŽNIKE
+       ========================================================================= */
+    function getPantry() {
+      const stored = SafeStore.get('veloFuelPantry_v16');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch (e) {}
+      }
+      return DEFAULT_PANTRY;
+    }
+
+    function savePantry(pantry) {
+      SafeStore.set('veloFuelPantry_v16', JSON.stringify(pantry));
+    }
+
+    function toggleAddFoodModal() {
+      document.getElementById('addFoodForm').classList.toggle('hidden');
+    }
+
+    function saveNewFoodItem() {
+      const name = document.getElementById('newFoodName').value.trim();
+      const role = document.getElementById('newFoodCat').value;
+      const carbs = safeParseFloat(document.getElementById('newFoodCarb').value, 0);
+      const prot = safeParseFloat(document.getElementById('newFoodProt').value, 0);
+      const fat = safeParseFloat(document.getElementById('newFoodFat').value, 0);
+      const fiber = safeParseFloat(document.getElementById('newFoodFiber').value, 0);
+      const salt = safeParseFloat(document.getElementById('newFoodSalt').value, 0);
+
+      if (!name) { alert('Vnesite ime izdelka.'); return; }
+
+      let cookedRatio = 1.0;
+      if (role === 'carb_fast' && name.toLowerCase().includes('riž')) cookedRatio = 2.6;
+      else if (role === 'carb_slow' && name.toLowerCase().includes('testen')) cookedRatio = 2.2;
+      else if (role === 'carb_slow' && name.toLowerCase().includes('oves')) cookedRatio = 2.4;
+      else if (role.includes('protein') && (name.toLowerCase().includes('puran') || name.toLowerCase().includes('piščanec') || name.toLowerCase().includes('meso'))) cookedRatio = 0.78;
+
+      const pantry = getPantry();
+      pantry.push({
+        id: 'custom_' + Date.now(),
+        name, role, carbs, prot, fat, fiber, salt,
+        unit: 'g',
+        cookedRatio
+      });
+
+      savePantry(pantry);
+      renderPantryUI();
+      toggleAddFoodModal();
+      document.getElementById('newFoodName').value = '';
+      runApp();
+    }
+
+    function deleteFoodItem(id) {
+      let pantry = getPantry();
+      if (pantry.length <= 1) { alert('V shrambi mora ostati vsaj eno živilo.'); return; }
+      pantry = pantry.filter(i => i.id !== id);
+      savePantry(pantry);
+      renderPantryUI();
+      runApp();
+    }
+
+    function renderPantryUI() {
+      const pantry = getPantry();
+      const container = document.getElementById('pantryContainer');
+      const categories = [
+        { key: 'carbs', roles: ['carb_fast', 'carb_slow'], label: '🌾 Škrobi & OGH (Obroki)', color: 'emerald' },
+        { key: 'proteins', roles: ['protein_fast', 'protein_slow'], label: '🥩 Beljakovinski viri', color: 'sky' },
+        { key: 'fats', roles: ['fat'], label: '🥑 Kakovostne maščobe', color: 'amber' }
+      ];
+
+      let html = '';
+      categories.forEach(cat => {
+        const items = pantry.filter(i => cat.roles.includes(i.role));
+        html += `
+          <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 space-y-2">
+            <div class="text-xs font-bold text-${cat.color}-400 border-b border-slate-900 pb-1 flex items-center justify-between">
+              <span>${cat.label}</span>
+              <span class="text-[10px] text-slate-500 font-mono">${items.length} živil</span>
+            </div>
+            <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+        `;
+        items.forEach(item => {
+          const roleTag = item.role.includes('fast') ? '⚡ Hiter' : (item.role.includes('slow') ? '⏳ Počasen' : 'Zdrav');
+          const fiberVal = safeParseFloat(item.fiber, 0);
+          const saltVal = safeParseFloat(item.salt, 0);
+          html += `
+            <div class="flex items-center justify-between p-1.5 bg-slate-900/60 hover:bg-slate-900 rounded text-xs gap-1">
+              <div class="truncate">
+                <span class="text-slate-200 font-semibold truncate block">${escapeHtml(item.name)}</span>
+                <span class="text-[10px] mono text-slate-400">
+                  ${item.carbs}C / ${item.prot}P / ${item.fat}F 
+                  <span class="text-purple-400 font-bold">• ${fiberVal}g Vl</span> 
+                  <span class="text-amber-400 font-bold">• ${saltVal}g Sol</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <span class="text-[9px] px-1 bg-slate-950 border border-slate-800 text-slate-400 rounded">${roleTag}</span>
+                <button onclick="deleteFoodItem('${item.id}')" title="Izbriši" class="text-slate-500 hover:text-rose-400 text-xs px-1">✕</button>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function exportBackup() {
+      const state = SafeStore.get('veloFuelState_v16');
+      const pantry = SafeStore.get('veloFuelPantry_v16') || JSON.stringify(DEFAULT_PANTRY);
+      const bikePantry = SafeStore.get('veloFuelBikePantry_v16') || JSON.stringify(DEFAULT_BIKE_PANTRY);
+      const data = { state: state ? JSON.parse(state) : {}, pantry: JSON.parse(pantry), bikePantry: JSON.parse(bikePantry), exportDate: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `VeloFuel_Backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.pantry) SafeStore.set('veloFuelPantry_v16', JSON.stringify(data.pantry));
+          if (data.bikePantry) SafeStore.set('veloFuelBikePantry_v16', JSON.stringify(data.bikePantry));
+          if (data.state) SafeStore.set('veloFuelState_v16', JSON.stringify(data.state));
+          alert('Podatki uspešno uvoženi!');
+          location.reload();
+        } catch (err) {
+          alert('Napaka pri uvozu JSON datoteke.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* =========================================================================
+       6. BRANJE VHODOV
+       ========================================================================= */
+    function readInputs() {
+      const weight = safeParseFloat(document.getElementById('weight').value, 70);
+      const ftpPower = safeParseFloat(document.getElementById('ftpPower').value, 340);
+      const height = safeParseFloat(document.getElementById('height').value, 194);
+      const age = safeParseFloat(document.getElementById('age').value, 22);
+      const gender = document.getElementById('gender').value || 'male';
+      const gutCapacity = document.getElementById('gutCapacity').value || 'mid';
+      const weightViewMode = document.getElementById('weightViewMode').value || 'raw';
+      const winterBaseMode = document.getElementById('winterBaseMode').checked;
+      const campMode = document.getElementById('campMode').checked;
+
+      const suppIron = document.getElementById('suppIron').checked;
+      const suppVitC = document.getElementById('suppVitC').checked;
+      const suppVitD = document.getElementById('suppVitD').checked;
+      const suppAshwa = document.getElementById('suppAshwa').checked;
+      const suppMinerals = document.getElementById('suppMinerals').checked;
+      const suppCaffeine = document.getElementById('suppCaffeine').checked;
+
+      const neatActivity = document.getElementById('neatActivity').value || 'moderate';
+      const wakeUpTime = document.getElementById('wakeUpTime').value || '06:30';
+      const sleepTime = document.getElementById('sleepTime').value || '23:15';
+
+      const prevDayType = document.getElementById('prevDayType').value;
+      const prevNeatActivity = document.getElementById('prevNeatActivity').value || 'moderate';
+      const prevRideBurnDirect = safeParseFloat(document.getElementById('prevRideBurnDirect').value, NaN);
+      const prevDuration = safeParseFloat(document.getElementById('prevDuration').value, 0);
+      const prevPower = safeParseFloat(document.getElementById('prevPower').value, 0);
+      const prevCaloriesIntake = safeParseFloat(document.getElementById('prevCaloriesIntake').value, NaN);
+      const prevCarbsIntake = safeParseFloat(document.getElementById('prevCarbsIntake').value, NaN);
+
+      const nextDayType = document.getElementById('nextDayType').value;
+      const nextDuration = safeParseFloat(document.getElementById('nextDuration').value, 0);
+      const nextPower = safeParseFloat(document.getElementById('nextPower').value, 0);
+      const nextDayStartTime = document.getElementById('nextDayStartTime').value || '09:30';
+
+      const todayIsRest = document.getElementById('todayIsRest').checked;
+      const startTime = document.getElementById('startTime').value || '14:30';
+      const duration = safeParseFloat(document.getElementById('duration').value, 0);
+      const power = safeParseFloat(document.getElementById('power').value, 0);
+      const temp = safeParseFloat(document.getElementById('temp').value, 20);
+
+      const addHeat = document.getElementById('addHeat').checked;
+      const addStrength = document.getElementById('addStrength').checked;
+      const addCore = document.getElementById('addCore').checked;
+
+      const activeZones = [];
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const minInput = document.getElementById(`min_${zKey}`);
+        const mins = minInput ? safeParseFloat(minInput.value, 0) : 0;
+        if (mins > 0) activeZones.push({ ...CONFIG.zones[zKey], minutes: mins });
+      });
+
+      const prevActiveZones = [];
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const minInput = document.getElementById(`prev_min_${zKey}`);
+        const mins = minInput ? safeParseFloat(minInput.value, 0) : 0;
+        if (mins > 0) prevActiveZones.push({ ...CONFIG.zones[zKey], minutes: mins });
+      });
+
+      const nextActiveZones = [];
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const minInput = document.getElementById(`next_min_${zKey}`);
+        const mins = minInput ? safeParseFloat(minInput.value, 0) : 0;
+        if (mins > 0) nextActiveZones.push({ ...CONFIG.zones[zKey], minutes: mins });
+      });
+
+      return {
+        weight, ftpPower, height, age, gender, gutCapacity, weightViewMode, winterBaseMode, campMode,
+        suppIron, suppVitC, suppVitD, suppAshwa, suppMinerals, suppCaffeine,
+        neatActivity, wakeUpTime, sleepTime,
+        prevDayType, prevNeatActivity, prevRideBurnDirect, prevDuration, prevPower, prevCaloriesIntake, prevCarbsIntake, prevActiveZones,
+        nextDayType, nextDuration, nextPower, nextDayStartTime, nextActiveZones,
+        todayIsRest, startTime, duration, power, temp,
+        addHeat, addStrength, addCore,
+        activeZones
+      };
+    }
+
+    /* =========================================================================
+       7. MOTOR PREHRANE V16.3 (POLNA KOLEKTIVNA INTEGRACIJA)
+       ========================================================================= */
+    function computePlan(inputs) {
+      const errors = [];
+      if (!inputs.weight || inputs.weight <= 35) errors.push('Vnesite veljavno težo (npr. 70 kg).');
+      if (!inputs.ftpPower || inputs.ftpPower <= 100) errors.push('Vnesite veljaven FTP kolesarja (npr. 340 W).');
+      if (!inputs.height || inputs.height <= 120) errors.push('Vnesite veljavno višino.');
+
+      const wakeM = timeToMinutes(inputs.wakeUpTime) || 390;
+      let sleepM = timeToMinutes(inputs.sleepTime) || 1395;
+      if (sleepM <= wakeM) sleepM += 1440;
+
+      let startM = timeToMinutes(inputs.startTime) || 870;
+      if (startM < wakeM && startM < 240) startM += 1440;
+
+      const rideDurationMinutes = Math.max(0, Math.round((inputs.duration || 0) * 60));
+      const finishM = startM + rideDurationMinutes;
+
+      if (!inputs.todayIsRest) {
+        if (inputs.duration <= 0) errors.push('Trajanje današnje vožnje mora biti večje od 0.');
+        if (inputs.power < 0) errors.push('Moč ne more biti negativna.');
+        
+        let effectiveSleep = sleepM;
+        if (effectiveSleep < startM) effectiveSleep += 1440;
+        if (finishM > effectiveSleep + 60) {
+          errors.push('Vožnja se zaključi po času za spanje. Prilagodite uro štarta ali spanja.');
+        }
+      }
+
+      if (errors.length > 0) return { valid: false, errors };
+
+      const wKg = (inputs.ftpPower / inputs.weight).toFixed(2);
+      const wKgBadge = document.getElementById('wKgDisplay');
+      if (wKgBadge) wKgBadge.innerText = `${wKg} W/kg FTP`;
+
+      const sGender = inputs.gender === 'male' ? 5 : -161;
+      const bmr = Math.round(10 * inputs.weight + 6.25 * inputs.height - 5 * inputs.age + sGender);
+
+      let neatToday = 650;
+      if (inputs.neatActivity === 'sedentary') neatToday = 350;
+      else if (inputs.neatActivity === 'active') neatToday = 950;
+      const dailyBaseNonExercise = bmr + neatToday;
+
+      let neatPrev = 650;
+      if (inputs.prevNeatActivity === 'sedentary') neatPrev = 350;
+      else if (inputs.prevNeatActivity === 'active') neatPrev = 950;
+      const prevBaseNonExercise = bmr + neatPrev;
+
+      let prevRideCalories = 0;
+      if (inputs.prevDayType === 'ride') {
+        if (!isNaN(inputs.prevRideBurnDirect) && inputs.prevRideBurnDirect > 0) {
+          prevRideCalories = Math.round(inputs.prevRideBurnDirect);
+        } else {
+          prevRideCalories = Math.round(inputs.prevPower * inputs.prevDuration * 3.6);
+        }
+      }
+      const prevTotalBurn = prevBaseNonExercise + prevRideCalories;
+      const prevBalance = !isNaN(inputs.prevCaloriesIntake) ? Math.round(inputs.prevCaloriesIntake - prevTotalBurn) : 0;
+
+      let prevTotalAssignedMins = inputs.prevActiveZones.reduce((a, b) => a + b.minutes, 0);
+      const prevTargetMins = Math.round(inputs.prevDuration * 60);
+      let prevGlycoBurnGrams = 0;
+      let prevHighIntensityMins = 0;
+
+      if (inputs.prevDayType === 'ride') {
+        inputs.prevActiveZones.forEach(z => {
+          prevGlycoBurnGrams += Math.round(z.glycoH * (z.minutes / 60));
+          if (z.isHigh) prevHighIntensityMins += z.minutes;
+        });
+
+        if (prevTargetMins > prevTotalAssignedMins) {
+          const unassignedMins = prevTargetMins - prevTotalAssignedMins;
+          prevGlycoBurnGrams += Math.round(38 * (unassignedMins / 60));
+        }
+      }
+
+      let prevCarbsActual = inputs.prevCarbsIntake;
+      if (isNaN(prevCarbsActual) || prevCarbsActual <= 0) {
+        prevCarbsActual = !isNaN(inputs.prevCaloriesIntake) 
+          ? Math.round((inputs.prevCaloriesIntake * 0.55) / 4) 
+          : Math.round(inputs.weight * 6.0);
+      }
+
+      const prevGlycoBalance = Math.round(prevCarbsActual - (150 + prevGlycoBurnGrams));
+      let yesterdayDeficitBonusGrams = 0;
+      if (prevGlycoBalance < 0) {
+        yesterdayDeficitBonusGrams = Math.min(180, Math.abs(prevGlycoBalance));
+      }
+
+      let yesterdayStressBonusGrams = 0;
+      if (prevHighIntensityMins >= 20 || prevGlycoBurnGrams > 160) {
+        yesterdayStressBonusGrams = Math.round(inputs.weight * 0.7);
+      } else if (inputs.prevDayType === 'rest' || (prevGlycoBurnGrams < 60 && prevHighIntensityMins === 0)) {
+        yesterdayStressBonusGrams = -Math.round(inputs.weight * 0.4);
+      }
+
+      const rideCalories = inputs.todayIsRest ? 0 : Math.round(inputs.power * inputs.duration * 3.6);
+      let extraCalories = 0;
+      if (inputs.addStrength) extraCalories += 280;
+      if (inputs.addHeat) extraCalories += 120;
+      if (inputs.addCore) extraCalories += 90;
+      const totalDayCalories = dailyBaseNonExercise + rideCalories + extraCalories;
+
+      let blendedCarbPerHour = 45;
+      let maxLeadHours = 1.25;
+      let todayTotalGlycogenBurnGrams = 0;
+      let hasAnyHigh = false;
+
+      if (!inputs.todayIsRest) {
+        const todayTargetMins = Math.round(inputs.duration * 60);
+        let todayAssignedMins = inputs.activeZones.reduce((a, b) => a + b.minutes, 0);
+
+        if (inputs.activeZones.length === 0 || todayAssignedMins === 0) {
+          blendedCarbPerHour = 50;
+          maxLeadHours = 1.5;
+          todayTotalGlycogenBurnGrams = Math.round(inputs.duration * 38);
+        } else {
+          let weightedTargetSum = 0;
+          let calculatedGlycoSum = 0;
+
+          inputs.activeZones.forEach(z => {
+            weightedTargetSum += z.targetCarbH * z.minutes;
+            calculatedGlycoSum += (z.glycoH * (z.minutes / 60));
+
+            if (z.isHigh && z.minutes >= 10) hasAnyHigh = true;
+            if (z.leadHours > maxLeadHours && z.minutes >= 15) maxLeadHours = z.leadHours;
+          });
+
+          if (todayTargetMins > todayAssignedMins) {
+            const unassignedMins = todayTargetMins - todayAssignedMins;
+            weightedTargetSum += 50 * unassignedMins;
+            calculatedGlycoSum += (38 * (unassignedMins / 60));
+            todayAssignedMins = todayTargetMins;
+          }
+
+          blendedCarbPerHour = Math.round(weightedTargetSum / todayAssignedMins);
+          todayTotalGlycogenBurnGrams = Math.round(calculatedGlycoSum);
+        }
+      }
+
+      if (inputs.winterBaseMode && !hasAnyHigh) {
+        blendedCarbPerHour = Math.min(blendedCarbPerHour, 40);
+      }
+
+      let maxGutAllowed = 70;
+      if (inputs.gutCapacity === 'low') maxGutAllowed = 50;
+      else if (inputs.gutCapacity === 'high') maxGutAllowed = 100;
+
+      let shiftedToMealsCarbs = 0;
+      if (blendedCarbPerHour > maxGutAllowed) {
+        const excessPerHour = blendedCarbPerHour - maxGutAllowed;
+        shiftedToMealsCarbs = Math.round(excessPerHour * inputs.duration);
+        blendedCarbPerHour = maxGutAllowed;
+      }
+
+      const totalRideCarbs = inputs.todayIsRest ? 0 : Math.round(blendedCarbPerHour * inputs.duration);
+
+      const nextRideCalories = (inputs.nextDayType !== 'rest') ? Math.round(inputs.nextPower * inputs.nextDuration * 3.6) : 0;
+      const nextStartM = timeToMinutes(inputs.nextDayStartTime);
+      const isTomorrowEarly = nextStartM < 540;
+
+      let tomorrowGlycoNeedGrams = 0;
+      let tomorrowHighIntensityMins = 0;
+      if (inputs.nextDayType !== 'rest') {
+        const nextTargetMins = Math.round(inputs.nextDuration * 60);
+        let nextAssignedMins = inputs.nextActiveZones.reduce((a, b) => a + b.minutes, 0);
+
+        if (inputs.nextActiveZones.length > 0) {
+          inputs.nextActiveZones.forEach(z => {
+            tomorrowGlycoNeedGrams += Math.round(z.glycoH * (z.minutes / 60));
+            if (z.isHigh) tomorrowHighIntensityMins += z.minutes;
+          });
+
+          if (nextTargetMins > nextAssignedMins) {
+            const unassigned = nextTargetMins - nextAssignedMins;
+            tomorrowGlycoNeedGrams += Math.round(38 * (unassigned / 60));
+          }
+        } else {
+          let baseRate = inputs.nextDayType === 'race' ? 80 : (inputs.nextDayType === 'hard' ? 65 : 40);
+          tomorrowGlycoNeedGrams = Math.round(inputs.nextDuration * baseRate);
+        }
+      }
+
+      let tomorrowPreloadGrams = 0;
+      let carbLoadStrategy = 'none';
+
+      if (inputs.nextDayType === 'race' || tomorrowGlycoNeedGrams > 200 || tomorrowHighIntensityMins >= 25) {
+        carbLoadStrategy = 'full_race_load';
+        tomorrowPreloadGrams = Math.round(tomorrowGlycoNeedGrams * 0.45);
+      } else if (inputs.nextDayType === 'hard' || tomorrowGlycoNeedGrams > 130) {
+        carbLoadStrategy = 'moderate_load';
+        tomorrowPreloadGrams = Math.round(tomorrowGlycoNeedGrams * 0.28);
+      } else if (inputs.nextDayType === 'rest' || (inputs.nextDuration <= 1.5 && tomorrowHighIntensityMins === 0)) {
+        carbLoadStrategy = 'light_tomorrow';
+        tomorrowPreloadGrams = -Math.round(inputs.weight * 0.5);
+      } else if (inputs.nextDayType === 'z2' && nextRideCalories > 2200) {
+        carbLoadStrategy = 'z2_high_burn';
+        tomorrowPreloadGrams = Math.round(tomorrowGlycoNeedGrams * 0.15);
+      }
+
+      // Periodizacija beljakovin & maščob
+      let protPerKg = (inputs.addStrength || prevHighIntensityMins >= 25) ? 2.1 : 1.85;
+      if (inputs.campMode) protPerKg = Math.max(protPerKg, 2.1);
+      const totalDayProtein = Math.round(inputs.weight * protPerKg);
+
+      let fatPerKg = 1.0;
+      if (inputs.todayIsRest) fatPerKg = 1.15;
+      else if (hasAnyHigh || carbLoadStrategy === 'full_race_load') fatPerKg = 0.9;
+      const totalDayFat = Math.round(inputs.weight * fatPerKg);
+
+      const todayBaseCarbs = Math.round(inputs.weight * 3.6);
+      let calculatedCarbs = todayBaseCarbs 
+                          + todayTotalGlycogenBurnGrams 
+                          + yesterdayDeficitBonusGrams 
+                          + yesterdayStressBonusGrams 
+                          + tomorrowPreloadGrams;
+
+      if (inputs.campMode) calculatedCarbs = Math.round(calculatedCarbs * 1.10);
+
+      let minCarbCap = inputs.todayIsRest ? inputs.weight * 3.5 : inputs.weight * 4.8;
+      let maxCarbCap = inputs.weight * 8.5;
+      if (carbLoadStrategy === 'full_race_load') {
+        minCarbCap = inputs.weight * 8.5;
+        maxCarbCap = inputs.weight * 11.5;
+      }
+
+      let totalDayCarbs = Math.round(Math.max(minCarbCap, Math.min(calculatedCarbs, maxCarbCap)));
+      const maxDailyFiber = Math.round(inputs.weight * 0.45);
+
+      // Hidracija & Natrij
+      let fluidRate = 500;
+      let sodiumRate = 450;
+      if (inputs.temp >= 18 && inputs.temp <= 25) { fluidRate = 650; sodiumRate = 550; }
+      else if (inputs.temp > 25) { fluidRate = 850; sodiumRate = 750; }
+      if (hasAnyHigh) sodiumRate += 100;
+
+      let rideFluidL = inputs.todayIsRest ? 0 : (fluidRate * inputs.duration) / 1000;
+      let baselineFluidL = Math.round((inputs.weight * 0.035) * 10) / 10;
+      if (inputs.addHeat) baselineFluidL += 0.75;
+      const totalFluidL = (baselineFluidL + rideFluidL).toFixed(1);
+
+      let targetRideSodium = inputs.todayIsRest ? 0 : Math.round(sodiumRate * inputs.duration);
+      if (inputs.addHeat) targetRideSodium += 600;
+      if (inputs.campMode) targetRideSodium += 300;
+
+      // DINAMIČNO PAKIRANJE IZ KOLESARSKE SHRAMBE
+      const bikePantry = getBikePantry();
+      const drinks = bikePantry.filter(i => i.type === 'drink');
+      const gels = bikePantry.filter(i => i.type === 'gel');
+      const bars = bikePantry.filter(i => i.type === 'bar');
+      const salts = bikePantry.filter(i => i.type === 'salt');
+
+      let packedItems = [];
+      let packCarbs = 0;
+      let packSodium = 0;
+      let packFat = 0;
+      let packFiber = 0;
+
+      if (!inputs.todayIsRest && inputs.duration > 0.75) {
+        if (drinks.length > 0) {
+          const drink = drinks[0];
+          const bottles = Math.min(2, Math.max(1, Math.floor(inputs.duration / 1.5)));
+          packedItems.push({ name: drink.name, count: bottles, unit: 'bidon' });
+          packCarbs += bottles * drink.carbs;
+          packSodium += bottles * drink.sodium;
+        }
+
+        if (hasAnyHigh && gels.length > 0) {
+          const gel = gels[0];
+          const gelCount = Math.max(1, Math.floor(inputs.duration / 1.25));
+          packedItems.push({ name: gel.name, count: gelCount, unit: 'gel' });
+          packCarbs += gelCount * gel.carbs;
+          packSodium += gelCount * gel.sodium;
+        }
+
+        while (packCarbs + 18 <= totalRideCarbs) {
+          if (!hasAnyHigh && bars.length > 0) {
+            const bar = bars[0];
+            const existing = packedItems.find(i => i.name === bar.name);
+            if (!existing || existing.count < 3) {
+              if (existing) existing.count++;
+              else packedItems.push({ name: bar.name, count: 1, unit: 'kos' });
+              packCarbs += bar.carbs;
+              packSodium += bar.sodium;
+              packFat += bar.fat;
+              packFiber += bar.fiber;
+              continue;
+            }
+          }
+          if (gels.length > 0) {
+            const gel = gels[0];
+            const existing = packedItems.find(i => i.name === gel.name);
+            if (existing) existing.count++;
+            else packedItems.push({ name: gel.name, count: 1, unit: 'gel' });
+            packCarbs += gel.carbs;
+            packSodium += gel.sodium;
+          } else {
+            break;
+          }
+        }
+
+        if (salts.length > 0) {
+          const salt = salts[0];
+          while (packSodium + 200 < targetRideSodium) {
+            const existing = packedItems.find(i => i.name === salt.name);
+            if (existing) existing.count++;
+            else packedItems.push({ name: salt.name, count: 1, unit: 'kapsula' });
+            packSodium += salt.sodium;
+          }
+        }
+      }
+
+      // Kofeinski protokol (Sleep-Safety Filter)
+      const caffeineMg = Math.round(inputs.weight * 4); // 4 mg/kg
+      const caffeineM = startM - 45;
+      const hoursBeforeSleep = (sleepM - caffeineM) / 60;
+      const isCaffeineSleepSafe = hoursBeforeSleep >= 6.0 && (startM % 1440) < 990; // pred 16:30 in vsaj 6h pred spanjem
+      const shouldIncludeCaffeine = inputs.suppCaffeine && (hasAnyHigh || inputs.nextDayType === 'race');
+
+      // Krožnik & Timing
+      const pantry = getPantry();
+      const isCooked = inputs.weightViewMode === 'cooked';
+      const nonRideCarbs = Math.max(0, totalDayCarbs - packCarbs);
+      const nonRideProt = Math.max(0, totalDayProtein);
+      const nonRideFat = Math.max(0, totalDayFat - packFat);
+      const isMorningRide = !inputs.todayIsRest && (startM - wakeM < 180);
+
+      function findFood(role, nameMatch = null) {
+        let candidates = pantry.filter(i => i.role === role);
+        if (nameMatch) {
+          const m = candidates.find(i => i.name.toLowerCase().includes(nameMatch.toLowerCase()));
+          if (m) return m;
+        }
+        return candidates[0] || pantry.find(i => i.role === role) || DEFAULT_PANTRY[0];
+      }
+
+      function generateContextPlate(targetC, targetP, targetF, mealContext) {
+        let items = [];
+        let mealFiber = 0;
+        let mealSodium = 0;
+
+        let primaryCarb = null, secondaryCarb = null, chosenProt = null, chosenFat = null;
+
+        if (mealContext === 'bfast') {
+          if (isMorningRide) {
+            primaryCarb = findFood('carb_fast', 'kruh') || findFood('carb_fast', 'riž');
+            secondaryCarb = findFood('carb_fast', 'med') || findFood('carb_fast', 'banana');
+            chosenProt = findFood('protein_slow', 'jajc') || findFood('protein_slow', 'skuta');
+          } else {
+            primaryCarb = findFood('carb_slow', 'oves') || findFood('carb_slow', 'kosmič');
+            secondaryCarb = findFood('carb_fast', 'banana') || findFood('carb_fast', 'med');
+            chosenProt = findFood('protein_slow', 'jajc') || findFood('protein_slow', 'skuta');
+            chosenFat = findFood('fat', 'arašid') || findFood('fat', 'orešč');
+          }
+        } else if (mealContext === 'lunch') {
+          primaryCarb = findFood('carb_slow', 'testen') || findFood('carb_fast', 'riž');
+          chosenProt = findFood('protein_slow', 'puran') || findFood('protein_slow', 'piščan') || findFood('protein_slow', 'tuna');
+          chosenFat = findFood('fat', 'olje');
+        } else if (mealContext === 'pre') {
+          primaryCarb = findFood('carb_fast', 'riž') || findFood('carb_fast', 'kruh');
+          secondaryCarb = findFood('carb_fast', 'med') || findFood('carb_fast', 'banana');
+          chosenProt = findFood('protein_fast', 'whey') || findFood('protein_slow', 'skuta');
+        } else if (mealContext === 'rec') {
+          primaryCarb = findFood('carb_fast', 'banana') || findFood('carb_fast', 'med');
+          chosenProt = findFood('protein_fast', 'whey') || DEFAULT_PANTRY[7];
+        } else if (mealContext === 'dinner') {
+          primaryCarb = findFood('carb_slow', 'krompir') || findFood('carb_slow', 'testen') || findFood('carb_fast', 'riž');
+          chosenProt = findFood('protein_slow', 'tuna') || findFood('protein_slow', 'puran') || findFood('protein_slow', 'piščan');
+          chosenFat = findFood('fat', 'olje') || DEFAULT_PANTRY[12];
+        } else if (mealContext === 'prebed') {
+          chosenProt = findFood('protein_slow', 'skuta') || DEFAULT_PANTRY[8];
+          chosenFat = findFood('fat', 'arašid') || DEFAULT_PANTRY[13];
+        }
+
+        if (targetC > 5 && primaryCarb) {
+          if (targetC > 65 && secondaryCarb && secondaryCarb.id !== primaryCarb.id) {
+            const c1 = targetC * 0.65;
+            const c2 = targetC * 0.35;
+            let g1 = Math.round(c1 / (safeParseFloat(primaryCarb.carbs, 75) / 100));
+            let g2 = Math.round(c2 / (safeParseFloat(secondaryCarb.carbs, 25) / 100));
+
+            mealFiber += (g1 * safeParseFloat(primaryCarb.fiber, 0)) / 100 + (g2 * safeParseFloat(secondaryCarb.fiber, 0)) / 100;
+            mealSodium += ((g1 * safeParseFloat(primaryCarb.salt, 0)) / 100 + (g2 * safeParseFloat(secondaryCarb.salt, 0)) / 100) * 400;
+
+            let label1 = primaryCarb.unit || 'g';
+            let label2 = secondaryCarb.unit || 'g';
+            if (isCooked) {
+              g1 = Math.round(g1 * (primaryCarb.cookedRatio || 2.4));
+              g2 = Math.round(g2 * (secondaryCarb.cookedRatio || 1.0));
+              label1 = 'g kuhanega';
+              label2 = 'g na krožniku';
+            }
+
+            items.push(`🥣 <strong>${g1} ${label1}</strong> ${primaryCarb.name}`);
+            items.push(`🍌 <strong>${g2} ${label2}</strong> ${secondaryCarb.name}`);
+          } else {
+            let g = Math.round(targetC / (safeParseFloat(primaryCarb.carbs, 75) / 100));
+            mealFiber += (g * safeParseFloat(primaryCarb.fiber, 0)) / 100;
+            mealSodium += ((g * safeParseFloat(primaryCarb.salt, 0)) / 100) * 400;
+
+            let label = primaryCarb.unit || 'g';
+            if (isCooked) {
+              g = Math.round(g * (primaryCarb.cookedRatio || 2.4));
+              label = 'g kuhanega/pripravljenega';
+            }
+            items.push(`🥣 <strong>${g} ${label}</strong> ${primaryCarb.name}`);
+          }
+        }
+
+        if (targetP > 5 && chosenProt) {
+          let g = Math.round(targetP / (safeParseFloat(chosenProt.prot, 22) / 100));
+          mealFiber += (g * safeParseFloat(chosenProt.fiber, 0)) / 100;
+          mealSodium += ((g * safeParseFloat(chosenProt.salt, 0)) / 100) * 400;
+
+          let label = chosenProt.unit || 'g';
+          if (isCooked && chosenProt.cookedRatio) {
+            g = Math.round(g * chosenProt.cookedRatio);
+            label = 'g pečenega/pripravljenega';
+          }
+          items.push(`🍗 <strong>${g} ${label}</strong> ${chosenProt.name}`);
+        }
+
+        if (targetF > 4 && chosenFat && mealContext !== 'pre' && mealContext !== 'rec') {
+          const g = Math.round(targetF / (safeParseFloat(chosenFat.fat, 100) / 100));
+          mealFiber += (g * safeParseFloat(chosenFat.fiber, 0)) / 100;
+          mealSodium += ((g * safeParseFloat(chosenFat.salt, 0)) / 100) * 400;
+          items.push(`🥑 <strong>${g} ${chosenFat.unit || 'g'}</strong> ${chosenFat.name}`);
+        }
+
+        return {
+          plateHtml: items.length > 0 ? items.join('<br>') : 'Uravnotežen obrok',
+          mealFiber: Math.round(mealFiber),
+          mealSodium: Math.round(mealSodium)
+        };
+      }
+
+      function getSupplementsForMeal(context, hasPreBed) {
+        let supps = [];
+        if (context === 'bfast') {
+          if (inputs.suppIron) supps.push('💊 <strong>Železo (Iron+)</strong> (na tešče z vodo, brez mleka/kave)');
+          if (inputs.suppVitC) supps.push('🍊 <strong>Vitamin C</strong> (pospešuje absorpcijo železa)');
+        } else if (context === 'lunch' || (isMorningRide && context === 'dinner')) {
+          if (inputs.suppVitD) supps.push('☀️ <strong>Vitamin D3</strong> (zaužijte z mastnim obrokom)');
+        } else if (context === 'dinner') {
+          if (inputs.suppMinerals) supps.push('⚡ <strong>Triple Mineral Support</strong> (Magnezij/Cink za sprostitev mišic)');
+          if (inputs.suppAshwa && !hasPreBed) {
+            supps.push('🌿 <strong>Ashwagandha</strong> (znižanje kortizola & parasimpatična regeneracija)');
+          }
+        } else if (context === 'prebed') {
+          if (inputs.suppAshwa) {
+            supps.push('🌿 <strong>Ashwagandha</strong> (znižanje kortizola pred spanjem)');
+          }
+        }
+        return supps.length > 0 ? `<div class="mt-2 pt-1.5 border-t border-indigo-900/40 text-[11px] text-indigo-300">${supps.join('<br>')}</div>` : '';
+      }
+
+      const bFastM = wakeM + 30;
+      let timelineEntries = [];
+
+      if (inputs.todayIsRest) {
+        const lunchM = wakeM + 330;
+        const snackM = wakeM + 600;
+        const dinnerM = sleepM - 120;
+
+        const meals = [
+          { name: 'Zajtrk', m: bFastM, cP: 0.28, pP: 0.25, fP: 0.25, type: 'Počasni škrobi + beljakovine', ctx: 'bfast' },
+          { name: 'Kosilo', m: lunchM, cP: 0.35, pP: 0.30, fP: 0.30, type: 'Testenine / krompir + meso', ctx: 'lunch' },
+          { name: 'Popoldanska malica', m: snackM, cP: 0.12, pP: 0.15, fP: 0.20, type: 'Lahka malica (Sadje/skuta)', ctx: 'rec' },
+          { name: 'Večerja', m: dinnerM, cP: 0.25, pP: 0.30, fP: 0.25, type: 'Regeneracijski nočni obrok', ctx: 'dinner' }
+        ];
+
+        meals.forEach(m => {
+          const c = Math.round(nonRideCarbs * m.cP);
+          const p = Math.round(nonRideProt * m.pP);
+          const f = Math.round(nonRideFat * m.fP);
+          const res = generateContextPlate(c, p, f, m.ctx);
+          const suppHtml = getSupplementsForMeal(m.ctx, false);
+          timelineEntries.push({
+            timeStr: minutesToTime(m.m),
+            title: m.name,
+            badge: m.type,
+            color: 'emerald',
+            plate: res.plateHtml + suppHtml,
+            c, p, f,
+            fiber: res.mealFiber,
+            sodium: res.mealSodium,
+            kcal: c * 4 + p * 4 + f * 9
+          });
+        });
+
+      } else {
+        const preLeadM = Math.round(maxLeadHours * 60);
+        let preMealM = startM - preLeadM;
+
+        if (isMorningRide) {
+          let recoveryM = finishM + (hasAnyHigh ? 20 : 35);
+          let lunchM = recoveryM + 90;
+          let dinnerM = isTomorrowEarly ? (sleepM - 160) : (sleepM - 130);
+
+          let cWeights = { bfast: 0.32, rec: 0.20, lunch: 0.25, dinner: 0.23 };
+          let pWeights = { bfast: 0.12, rec: 0.25, lunch: 0.33, dinner: 0.30 };
+          let fWeights = { bfast: 0.05, rec: 0.05, lunch: 0.45, dinner: 0.45 };
+
+          const makeEntry = (name, m, key, badge, color, ctx) => {
+            let c = Math.round(nonRideCarbs * cWeights[key]);
+            if (key === 'bfast' && shiftedToMealsCarbs > 0) c += Math.round(shiftedToMealsCarbs * 0.6);
+            if (key === 'dinner' && shiftedToMealsCarbs > 0) c += Math.round(shiftedToMealsCarbs * 0.4);
+
+            const p = Math.round(nonRideProt * pWeights[key]);
+            const f = Math.round(nonRideFat * fWeights[key]);
+            const res = generateContextPlate(c, p, f, ctx);
+            const suppHtml = getSupplementsForMeal(ctx, false);
+            return {
+              timeStr: minutesToTime(m),
+              title: name,
+              badge, color,
+              plate: res.plateHtml + suppHtml,
+              c, p, f,
+              fiber: res.mealFiber,
+              sodium: res.mealSodium,
+              kcal: c * 4 + p * 4 + f * 9
+            };
+          };
+
+          timelineEntries.push(makeEntry(`Zajtrk & Pred-obrok (${maxLeadHours}h pred štartom)`, Math.max(wakeM + 20, preMealM), 'bfast', '⚡ Zgodnji štart: Hitri OGH (Beli kruh/riž, med, malo vlaknin)', 'amber', 'bfast'));
+
+          // Kofein vnos (če je primerno)
+          if (shouldIncludeCaffeine) {
+            if (isCaffeineSleepSafe) {
+              timelineEntries.push({
+                timeStr: minutesToTime(caffeineM),
+                title: '☕ Ergogeni kofeinski odmerek',
+                badge: `${caffeineMg} mg kofeina (4mg/kg)`,
+                color: 'amber',
+                plate: `Vzemi <strong>${caffeineMg} mg kofeina</strong> (kofeinski gel ali espresso) natanko 45 min pred štartom.`,
+                c: 0, p: 0, f: 0, fiber: 0, sodium: 0, kcal: 0
+              });
+            }
+          }
+
+          timelineEntries.push({
+            timeStr: `${minutesToTime(startM)} – ${minutesToTime(finishM)}`,
+            title: `Trening na kolesu (${inputs.power} W / ${((inputs.power / inputs.ftpPower) * 100).toFixed(0)}% FTP)`,
+            badge: `${blendedCarbPerHour} g OGH/h ${inputs.winterBaseMode ? '(Fat-Max baza)' : ''}`,
+            color: 'amber',
+            plate: `Žepi & Bidoni: ${packCarbs} g OGH, ${packSodium} mg Na. ${hasAnyHigh ? 'Pred intervali uporabite gele in bidone.' : 'Pijte enakomerno na 15 min.'}`,
+            c: packCarbs,
+            p: 0,
+            f: packFat,
+            fiber: packFiber,
+            sodium: packSodium,
+            kcal: packCarbs * 4 + packFat * 9
+          });
+
+          timelineEntries.push(makeEntry('Regeneracija po vožnji', recoveryM, 'rec', 'Hitri sladkorji + Whey', 'sky', 'rec'));
+          timelineEntries.push(makeEntry('Popoldansko kosilo', lunchM, 'lunch', 'Polnovredne testenine / meso', 'emerald', 'lunch'));
+
+          let dinnerTitle = 'Večerja';
+          let dinnerBadge = 'Uravnoteženi škrobi (Krompir/riž)';
+          if (carbLoadStrategy === 'full_race_load') {
+            dinnerTitle = `Večerja (Pre-Load za jutri +${tomorrowPreloadGrams}g OGH)`;
+            dinnerBadge = 'Nizkovlakninski škrobi (Tekma/VO2)';
+          }
+          timelineEntries.push(makeEntry(dinnerTitle, dinnerM, 'dinner', dinnerBadge, 'emerald', 'dinner'));
+
+        } else {
+          let hasLunch = false;
+          let lunchM = 0;
+
+          if (preMealM - bFastM >= 210) {
+            hasLunch = true;
+            lunchM = bFastM + Math.round((preMealM - bFastM) * 0.55);
+          }
+
+          const recoveryM = finishM + (hasAnyHigh ? 20 : 35);
+          let dinnerM = isTomorrowEarly ? (sleepM - 160) : (sleepM - 130);
+          let hasSeparatePreBed = !isTomorrowEarly;
+
+          if (dinnerM < recoveryM + 60) dinnerM = recoveryM + 75;
+          if (sleepM - dinnerM < 100) hasSeparatePreBed = false;
+
+          let cWeights = {}, pWeights = {}, fWeights = {};
+
+          if (hasLunch) {
+            cWeights = { bfast: 0.20, lunch: 0.22, pre: 0.22, rec: 0.16, dinner: 0.15, prebed: 0.05 };
+            pWeights = { bfast: 0.20, lunch: 0.25, pre: 0.08, rec: 0.22, dinner: 0.20, prebed: 0.05 };
+            fWeights = { bfast: 0.25, lunch: 0.30, pre: 0.05, rec: 0.05, dinner: 0.30, prebed: 0.05 };
+          } else {
+            cWeights = { bfast: 0.30, pre: 0.26, rec: 0.18, dinner: 0.20, prebed: 0.06 };
+            pWeights = { bfast: 0.25, pre: 0.08, rec: 0.25, dinner: 0.32, prebed: 0.10 };
+            fWeights = { bfast: 0.35, pre: 0.05, rec: 0.05, dinner: 0.45, prebed: 0.10 };
+          }
+
+          if (!hasSeparatePreBed) {
+            cWeights.dinner += cWeights.prebed || 0; delete cWeights.prebed;
+            pWeights.dinner += pWeights.prebed || 0; delete pWeights.prebed;
+            fWeights.dinner += fWeights.prebed || 0; delete fWeights.prebed;
+          }
+
+          const makeEntry = (name, m, key, badge, color, ctx) => {
+            let c = Math.round(nonRideCarbs * cWeights[key]);
+            if (key === 'pre' && shiftedToMealsCarbs > 0) c += Math.round(shiftedToMealsCarbs * 0.6);
+            if (key === 'dinner' && shiftedToMealsCarbs > 0) c += Math.round(shiftedToMealsCarbs * 0.4);
+
+            const p = Math.round(nonRideProt * pWeights[key]);
+            const f = Math.round(nonRideFat * fWeights[key]);
+            const res = generateContextPlate(c, p, f, ctx);
+            const suppHtml = getSupplementsForMeal(ctx, hasSeparatePreBed);
+            return {
+              timeStr: minutesToTime(m),
+              title: name,
+              badge, color,
+              plate: res.plateHtml + suppHtml,
+              c, p, f,
+              fiber: res.mealFiber,
+              sodium: res.mealSodium,
+              kcal: c * 4 + p * 4 + f * 9
+            };
+          };
+
+          timelineEntries.push(makeEntry('Zajtrk', bFastM, 'bfast', 'Počasni ovseni kosmiči + jajca', 'emerald', 'bfast'));
+
+          if (hasLunch) {
+            timelineEntries.push(makeEntry('Kosilo', lunchM, 'lunch', 'Sestavljeni škrobi (Testenine/riž)', 'emerald', 'lunch'));
+          }
+
+          timelineEntries.push(makeEntry(`Ciljni pred-obrok (${maxLeadHours}h prej)`, preMealM, 'pre', 'Hitri škrobi (Beli riž/toast + med/banana)', 'amber', 'pre'));
+
+          // Kofein vnos
+          if (shouldIncludeCaffeine) {
+            if (isCaffeineSleepSafe) {
+              timelineEntries.push({
+                timeStr: minutesToTime(caffeineM),
+                title: '☕ Ergogeni kofeinski odmerek',
+                badge: `${caffeineMg} mg kofeina (4mg/kg)`,
+                color: 'amber',
+                plate: `Vzemi <strong>${caffeineMg} mg kofeina</strong> (kofeinski gel ali močna kava) točno 45 min pred štartom.`,
+                c: 0, p: 0, f: 0, fiber: 0, sodium: 0, kcal: 0
+              });
+            }
+          }
+
+          timelineEntries.push({
+            timeStr: `${minutesToTime(startM)} – ${minutesToTime(finishM)}`,
+            title: `Trening na kolesu (${inputs.power} W / ${((inputs.power / inputs.ftpPower) * 100).toFixed(0)}% FTP)`,
+            badge: `${blendedCarbPerHour} g OGH/h ${inputs.winterBaseMode ? '(Fat-Max baza)' : ''}`,
+            color: 'amber',
+            plate: `Žepi & Bidoni: ${packCarbs} g OGH, ${packSodium} mg Na. ${hasAnyHigh ? 'Pred intervali uporabite gele in tekočino.' : 'Pijte enakomerno na 15 min.'}`,
+            c: packCarbs,
+            p: 0,
+            f: packFat,
+            fiber: packFiber,
+            sodium: packSodium,
+            kcal: packCarbs * 4 + packFat * 9
+          });
+
+          timelineEntries.push(makeEntry('Regeneracija po vožnji', recoveryM, 'rec', 'Hitri sladkorji + Whey', 'sky', 'rec'));
+
+          let dinnerTitle = 'Večerja';
+          let dinnerBadge = 'Rotacija škroba (Krompir/testenine) + meso';
+          if (carbLoadStrategy === 'full_race_load') {
+            dinnerTitle = `Večerja (Pre-Load za jutri +${tomorrowPreloadGrams}g OGH)`;
+            dinnerBadge = 'Nizkovlakninski škrobi (Tekma/VO2)';
+          }
+          timelineEntries.push(makeEntry(dinnerTitle, dinnerM, 'dinner', dinnerBadge, 'emerald', 'dinner'));
+
+          if (hasSeparatePreBed) {
+            const preBedM = sleepM - 45;
+            timelineEntries.push(makeEntry('Malica pred spanjem (45 min prej)', preBedM, 'prebed', 'Nočni kazein / skuta', 'indigo', 'prebed'));
+          }
+        }
+      }
+
+      // Nivelacija makrohranil
+      let sumC = 0, sumP = 0, sumF = 0;
+      timelineEntries.forEach(e => { sumC += e.c; sumP += e.p; sumF += e.f; });
+
+      const targetAdjustMeal = timelineEntries.find(e => e.title.includes('Večerja')) || timelineEntries[0];
+      if (targetAdjustMeal) {
+        targetAdjustMeal.c += (totalDayCarbs - sumC);
+        targetAdjustMeal.p += (totalDayProtein - sumP);
+        targetAdjustMeal.f += (totalDayFat - sumF);
+        targetAdjustMeal.kcal = targetAdjustMeal.c * 4 + targetAdjustMeal.p * 4 + targetAdjustMeal.f * 9;
+      }
+
+      return {
+        valid: true,
+        bmr, dailyBaseNonExercise, prevTotalBurn, prevBalance, prevRideCalories,
+        rideCalories, totalDayCalories, nextRideCalories, carbLoadStrategy,
+        yesterdayDeficitBonusGrams, yesterdayStressBonusGrams, tomorrowPreloadGrams, todayTotalGlycogenBurnGrams,
+        blendedCarbPerHour, totalRideCarbs,
+        totalDayCarbs, totalDayProtein, totalDayFat, maxDailyFiber,
+        totalFluidL, targetRideSodium, shiftedToMealsCarbs, isMorningRide,
+        packedItems, packCarbs, packSodium,
+        timelineEntries,
+        hasAnyHigh,
+        caffeineMg, shouldIncludeCaffeine, isCaffeineSleepSafe
+      };
+    }
+
+    /* =========================================================================
+       8. IZRIS REZULTATOV
+       ========================================================================= */
+    function render(plan, inputs) {
+      const errorBanner = document.getElementById('errorBanner');
+      if (!plan.valid) {
+        errorBanner.innerHTML = plan.errors.map(e => `<div>• ${escapeHtml(e)}</div>`).join('');
+        errorBanner.classList.remove('hidden');
+        document.getElementById('results').classList.add('hidden');
+        return;
+      }
+      errorBanner.classList.add('hidden');
+
+      const noticeBox = document.getElementById('noticeBox');
+      let noticesHtml = '';
+
+      if (plan.isMorningRide) {
+        noticesHtml += `
+          <div class="p-3 bg-amber-950/80 border border-amber-600 rounded-xl text-xs text-amber-200 leading-relaxed">
+            <strong>🌅 Zgodnji štart vožnje:</strong> Štart je dopoldan (<3h po bujenju), zato so pri zajtrku <strong>izločeni ovseni kosmiči in vlaknine</strong>. Zajtrk deluje kot predtekmovalni obrok z nizko vsebnostjo vlaknin.
+          </div>
+        `;
+      }
+
+      if (inputs.campMode) {
+        noticesHtml += `
+          <div class="p-3 bg-amber-950/80 border border-amber-600 rounded-xl text-xs text-amber-200 leading-relaxed">
+            <strong>🏔️ Vklopljen način Priprave (Camp Mode):</strong> Zaradi kumulativne utrujenosti so ogljikovi hidrati povišani za <strong>+10 %</strong>, beljakovine so zaklenjene na <strong>2,1 g/kg</strong>, natrij pa je povišan za hitrejšo hidracijo.
+          </div>
+        `;
+      }
+
+      if (plan.shouldIncludeCaffeine && !plan.isCaffeineSleepSafe) {
+        noticesHtml += `
+          <div class="p-3 bg-rose-950/80 border border-rose-600 rounded-xl text-xs text-rose-200 leading-relaxed">
+            <strong>⚠️ Kofeinski Sleep-Safety Filter:</strong> Kofein je bil samodejno izločen, ker je štart vožnje prepozen ali manj kot 6 ur pred spanjem. S tem preprečimo motnje globokega spanca.
+          </div>
+        `;
+      }
+
+      if (plan.shiftedToMealsCarbs > 0) {
+        noticesHtml += `
+          <div class="p-3 bg-amber-950/80 border border-amber-700 rounded-xl text-xs text-amber-200 leading-relaxed">
+            <strong>🛡️ Črevesno varovalo (Gut Limit):</strong> Presežek <strong>${plan.shiftedToMealsCarbs} g OGH</strong> je prestavljen v obroke pred in po kolesu.
+          </div>
+        `;
+      }
+
+      noticeBox.innerHTML = noticesHtml;
+
+      const prevBalEl = document.getElementById('resPrevBalance');
+      const prevBalSub = document.getElementById('resPrevBalanceSub');
+      if (!isNaN(inputs.prevCaloriesIntake) && inputs.prevCaloriesIntake > 0) {
+        prevBalEl.innerText = `${plan.prevBalance >= 0 ? '+' : ''}${plan.prevBalance} kcal`;
+        prevBalEl.className = `text-lg font-black mt-0.5 mono ${plan.prevBalance < -350 ? 'text-rose-400' : 'text-emerald-400'}`;
+        prevBalSub.innerText = plan.yesterdayDeficitBonusGrams > 0 ? `Deficit (-${plan.yesterdayDeficitBonusGrams}g OGH)` : 'Optimalna bilanca';
+      } else {
+        prevBalEl.innerText = `${plan.prevRideCalories} kcal`;
+        prevBalEl.className = 'text-lg font-black mt-0.5 text-amber-400 mono';
+        prevBalSub.innerText = 'Poraba na kolesu';
+      }
+
+      document.getElementById('resBurn').innerText = `${plan.rideCalories} kcal`;
+      document.getElementById('resBurnPerH').innerText = inputs.todayIsRest ? 'Počitek' : `~${plan.todayTotalGlycogenBurnGrams}g glikogena`;
+      document.getElementById('resNextBurn').innerText = `${plan.nextRideCalories} kcal`;
+      document.getElementById('resNextTarget').innerText = plan.tomorrowPreloadGrams > 0 ? `+${plan.tomorrowPreloadGrams}g Pre-Load` : 'Standard';
+      document.getElementById('resTotalCalories').innerText = `${plan.totalDayCalories} kcal`;
+      document.getElementById('resIntensityMode').innerText = inputs.todayIsRest ? 'Počitek (0 W)' : `${plan.blendedCarbPerHour} g OGH/h cilj`;
+
+      document.getElementById('displayViewBadge').innerText = inputs.weightViewMode === 'cooked' ? 'Prikaz: Kuhana teža (Menza)' : 'Prikaz: Surova živila (Doma)';
+      document.getElementById('weightModeSubtitle').innerText = inputs.weightViewMode === 'cooked' 
+        ? 'Prikazane so kuhane/pripravljene gramature na krožniku za lažjo oceno v menzi' 
+        : 'Prikazane so surove gramature za tehtanje doma pred pripravo';
+
+      document.getElementById('totCarbs').innerText = `${plan.totalDayCarbs} g`;
+      document.getElementById('totCarbsSub').innerText = `${(plan.totalDayCarbs / inputs.weight).toFixed(1)} g/kg`;
+
+      document.getElementById('totProtein').innerText = `${plan.totalDayProtein} g`;
+      document.getElementById('totProtSub').innerText = `${(plan.totalDayProtein / inputs.weight).toFixed(1)} g/kg`;
+
+      document.getElementById('totFat').innerText = `${plan.totalDayFat} g`;
+      document.getElementById('totFatSub').innerText = `${(plan.totalDayFat / inputs.weight).toFixed(1)} g/kg`;
+
+      document.getElementById('totFiber').innerText = `< ${plan.maxDailyFiber} g`;
+      document.getElementById('totFluid').innerText = `${plan.totalFluidL} L`;
+      document.getElementById('totSodium').innerText = inputs.todayIsRest ? 'Bazični vnos' : `Na kolesu: ~${plan.targetRideSodium} mg`;
+
+      // Pakiranje
+      const packingSection = document.getElementById('packingSection');
+      if (inputs.todayIsRest) {
+        packingSection.classList.add('hidden');
+      } else {
+        packingSection.classList.remove('hidden');
+        let packHtml = '';
+        plan.packedItems.forEach(item => {
+          packHtml += `
+            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+              <div class="text-[10px] text-emerald-400 font-semibold uppercase">${escapeHtml(item.unit)}</div>
+              <div class="text-sm font-bold text-white">${item.count}x ${escapeHtml(item.name)}</div>
+            </div>
+          `;
+        });
+
+        document.getElementById('packingList').innerHTML = packHtml || '<div class="text-xs text-slate-400 col-span-2">Dovolj je zgolj bidon z vodo.</div>';
+        document.getElementById('packSummary').innerText = `Spakirano: ${plan.packCarbs} g OGH (cilj: ${plan.totalRideCarbs} g)`;
+        document.getElementById('hydrationPlan').innerText = `💧 Dinamika pitja: ~${Math.round((plan.totalFluidL / (inputs.duration || 1)) * 300)} ml/h`;
+        
+        const sodDiff = plan.packSodium - plan.targetRideSodium;
+        document.getElementById('sodiumStatus').innerHTML = `🧂 Natrij v opremi: <strong>${plan.packSodium} mg</strong> (cilj: ${plan.targetRideSodium} mg ${sodDiff >= 0 ? '✓' : '⚠️ dodajte elektrolite'})`;
+      }
+
+      document.getElementById('timingBadge').innerText = inputs.todayIsRest 
+        ? 'Ritem počitka' 
+        : `Glikolitična poraba: ~${plan.todayTotalGlycogenBurnGrams} g glikogena`;
+
+      // Časovnica
+      let timelineHtml = '';
+      plan.timelineEntries.forEach(entry => {
+        const borderColors = { emerald: 'border-emerald-500', amber: 'border-amber-500', sky: 'border-sky-500', indigo: 'border-indigo-500' };
+        const textColors = { emerald: 'text-emerald-400', amber: 'text-amber-400', sky: 'text-sky-400', indigo: 'text-indigo-400' };
+
+        const bColor = borderColors[entry.color] || 'border-slate-700';
+        const tColor = textColors[entry.color] || 'text-slate-300';
+
+        timelineHtml += `
+          <div class="border-l-2 ${bColor} pl-3.5 py-2 transition hover:bg-slate-900/50 rounded-r-lg bg-slate-950/40 mb-2">
+            <div class="flex items-center justify-between flex-wrap gap-1">
+              <span class="text-xs ${tColor} font-bold uppercase tracking-wider">${escapeHtml(entry.timeStr)} — ${escapeHtml(entry.title)}</span>
+              <span class="text-[10px] bg-slate-950 text-slate-300 border border-slate-800 px-2 py-0.5 rounded font-mono">${escapeHtml(entry.badge)}</span>
+            </div>
+            
+            <div class="text-xs text-emerald-300/90 mt-1.5 leading-relaxed bg-slate-900/80 p-2.5 rounded border border-slate-800/80">
+              ${entry.plate}
+            </div>
+            
+            ${entry.kcal > 0 ? `
+              <div class="flex flex-wrap items-center gap-2 text-xs mt-2 mono text-slate-400">
+                <span class="text-white font-bold">${entry.kcal} kcal</span>
+                <span class="text-slate-600">•</span>
+                <span class="text-emerald-400 font-semibold">${entry.c}g OGH</span>
+                <span class="text-slate-600">•</span>
+                <span class="text-sky-400 font-semibold">${entry.p}g Belj</span>
+                <span class="text-slate-600">•</span>
+                <span class="text-amber-400 font-semibold">${entry.f}g Mašč</span>
+                ${entry.fiber !== undefined ? `<span class="text-slate-600">•</span><span class="text-purple-400">${entry.fiber}g Vlaknin</span>` : ''}
+                ${entry.sodium !== undefined && entry.sodium > 0 ? `<span class="text-slate-600">•</span><span class="text-amber-300">${entry.sodium}mg Na</span>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      document.getElementById('timeline').innerHTML = timelineHtml;
+      document.getElementById('results').classList.remove('hidden');
+    }
+
+    /* =========================================================================
+       9. KRMILNIK, SHRANJEVANJE IN DOGODKI
+       ========================================================================= */
+    function runApp() {
+      saveInputs();
+      const inputs = readInputs();
+      const plan = computePlan(inputs);
+      render(plan, inputs);
+    }
+
+    function saveInputs() {
+      const inputs = document.querySelectorAll('.save-state');
+      const state = {};
+      inputs.forEach(el => {
+        if (el.type === 'checkbox') state[el.id] = el.checked;
+        else state[el.id] = el.value;
+      });
+      SafeStore.set('veloFuelState_v16', JSON.stringify(state));
+    }
+
+    function loadInputs() {
+      const saved = SafeStore.get('veloFuelState_v16');
+      if (!saved) return;
+      try {
+        const state = JSON.parse(saved);
+        Object.keys(state).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) {
+            if (el.type === 'checkbox') el.checked = state[id];
+            else el.value = state[id];
+          }
+        });
+      } catch (e) {}
+    }
+
+    function resetDefaults() {
+      SafeStore.clear();
+      location.reload();
+    }
+
+    function rollOverDay() {
+      const nextDayType = document.getElementById('nextDayType').value;
+      const nextDuration = document.getElementById('nextDuration').value;
+      const nextPower = document.getElementById('nextPower').value;
+      const nextStartTime = document.getElementById('nextDayStartTime').value;
+
+      const todayPower = safeParseFloat(document.getElementById('power').value, 0);
+      const todayDuration = safeParseFloat(document.getElementById('duration').value, 0);
+      
+      document.getElementById('prevDayType').value = document.getElementById('todayIsRest').checked ? 'rest' : 'ride';
+      document.getElementById('prevDuration').value = todayDuration;
+      document.getElementById('prevPower').value = todayPower;
+      document.getElementById('prevRideBurnDirect').value = Math.round(todayPower * todayDuration * 3.6);
+      document.getElementById('prevNeatActivity').value = document.getElementById('neatActivity').value;
+
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const todayMin = document.getElementById(`min_${zKey}`);
+        const prevMin = document.getElementById(`prev_min_${zKey}`);
+        if (todayMin && prevMin) prevMin.value = todayMin.value;
+      });
+
+      const totCarbsEl = document.getElementById('totCarbs');
+      const totKcalEl = document.getElementById('resTotalCalories');
+      if (totCarbsEl && totKcalEl) {
+        document.getElementById('prevCarbsIntake').value = parseInt(totCarbsEl.innerText) || '';
+        document.getElementById('prevCaloriesIntake').value = parseInt(totKcalEl.innerText) || '';
+      }
+
+      if (nextDayType === 'rest') {
+        document.getElementById('todayIsRest').checked = true;
+      } else {
+        document.getElementById('todayIsRest').checked = false;
+        document.getElementById('duration').value = nextDuration;
+        document.getElementById('power').value = nextPower;
+        document.getElementById('startTime').value = nextStartTime;
+
+        Object.keys(CONFIG.zones).forEach(zKey => {
+          const nextMin = document.getElementById(`next_min_${zKey}`);
+          const todayMin = document.getElementById(`min_${zKey}`);
+          if (nextMin && todayMin) todayMin.value = nextMin.value;
+        });
+      }
+
+      document.getElementById('nextDayType').value = 'z2';
+      document.getElementById('nextDuration').value = '2.5';
+      document.getElementById('nextPower').value = Math.round(safeParseFloat(document.getElementById('ftpPower').value, 340) * 0.65);
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const nextMin = document.getElementById(`next_min_${zKey}`);
+        if (nextMin) nextMin.value = 0;
+      });
+
+      updateRestVisibility();
+      runApp();
+    }
+
+    function updateRestVisibility() {
+      const isRest = document.getElementById('todayIsRest').checked;
+      document.getElementById('todayRideBlock').style.opacity = isRest ? '0.3' : '1';
+      document.getElementById('todayRideBlock').style.pointerEvents = isRest ? 'none' : 'auto';
+    }
+
+    function buildAllZoneUIs() {
+      const todayContainer = document.getElementById('zoneCheckboxesContainer');
+      let htmlToday = '';
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const z = CONFIG.zones[zKey];
+        htmlToday += `
+          <div class="p-1.5 bg-slate-950 border border-slate-800 rounded flex items-center justify-between gap-1">
+            <span class="font-bold text-[10px] text-white truncate">${escapeHtml(z.name)}</span>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <input type="text" inputmode="numeric" id="min_${z.id}" value="0" class="save-state zone-min w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white text-right mono">
+              <span class="text-[9px] text-slate-400">m</span>
+            </div>
+          </div>
+        `;
+      });
+      todayContainer.innerHTML = htmlToday;
+
+      const prevContainer = document.getElementById('prevZoneContainer');
+      let htmlPrev = '';
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const z = CONFIG.zones[zKey];
+        htmlPrev += `
+          <div class="p-1.5 bg-slate-950 border border-slate-800 rounded flex items-center justify-between gap-1">
+            <span class="text-[10px] text-amber-300 truncate">${escapeHtml(z.name)}</span>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <input type="text" inputmode="numeric" id="prev_min_${z.id}" value="0" class="save-state w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white text-right mono">
+              <span class="text-[9px] text-slate-400">m</span>
+            </div>
+          </div>
+        `;
+      });
+      prevContainer.innerHTML = htmlPrev;
+
+      const nextContainer = document.getElementById('nextZoneContainer');
+      let htmlNext = '';
+      Object.keys(CONFIG.zones).forEach(zKey => {
+        const z = CONFIG.zones[zKey];
+        htmlNext += `
+          <div class="p-1.5 bg-slate-950 border border-slate-800 rounded flex items-center justify-between gap-1">
+            <span class="text-[10px] text-sky-300 truncate">${escapeHtml(z.name)}</span>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <input type="text" inputmode="numeric" id="next_min_${z.id}" value="0" class="save-state w-11 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-[10px] text-white text-right mono">
+              <span class="text-[9px] text-slate-400">m</span>
+            </div>
+          </div>
+        `;
+      });
+      nextContainer.innerHTML = htmlNext;
+
+      document.querySelectorAll('.zone-min').forEach(el => {
+        el.addEventListener('input', () => {
+          let totalMins = 0;
+          document.querySelectorAll('.zone-min').forEach(input => {
+            totalMins += safeParseFloat(input.value, 0);
+          });
+          document.getElementById('zoneTimeTotal').innerText = `${totalMins} min`;
+        });
+      });
+    }
+
+    // PWA Manifest & Service Worker registracija
+    function setupPwa() {
+      const manifest = {
+        name: "VeloFuel Pro",
+        short_name: "VeloFuel",
+        start_url: "./index.html",
+        display: "standalone",
+        background_color: "#020617",
+        theme_color: "#020617",
+        icons: [{
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23020617'/%3E%3Ctext y='50%25' x='50%25' font-size='60' text-anchor='middle' dominant-baseline='central'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E",
+          sizes: "192x192 512x512",
+          type: "image/svg+xml"
+        }]
+      };
+      const stringManifest = JSON.stringify(manifest);
+      const blob = new Blob([stringManifest], {type: 'application/json'});
+      const manifestURL = URL.createObjectURL(blob);
+      const link = document.createElement('link');
+      link.rel = 'manifest';
+      link.href = manifestURL;
+      document.head.appendChild(link);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!checkKillSwitch()) return;
+      checkUserAccess();
+      setupPwa();
+      buildAllZoneUIs();
+      renderBikePantryUI();
+      renderPantryUI();
+      loadInputs();
+      
+      const defaultMin = document.getElementById('min_zone_z2_steady');
+      if (defaultMin && safeParseFloat(defaultMin.value, 0) === 0) {
+        defaultMin.value = 180;
+      }
+
+      document.getElementById('todayIsRest').addEventListener('change', updateRestVisibility);
+      document.getElementById('prevDayType').addEventListener('change', (e) => {
+        document.getElementById('prevRideFields').style.display = e.target.value === 'rest' ? 'none' : 'block';
+      });
+
+      let debounceTimer;
+      document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(runApp, 250);
+        });
+      });
+
+      updateRestVisibility();
+      runApp();
+    });
+  </script>
+</body>
+</html>
